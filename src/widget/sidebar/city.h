@@ -1,6 +1,8 @@
 #ifndef WIDGET_SIDEBAR_CITY_H
 #define WIDGET_SIDEBAR_CITY_H
 
+#include "graphics/color.h"
+#include "graphics/font.h"
 #include "graphics/tooltip.h"
 #include "input/mouse.h"
 
@@ -18,6 +20,10 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m);
 
 void widget_sidebar_city_draw_panel_list_frame(void);
 void widget_sidebar_city_draw_panel_list_row(int x, int y, int width, int height, int is_highlighted);
+int widget_sidebar_city_draw_panel_list_arrow(int x, int y, int width, int height);
+font_t widget_sidebar_city_get_panel_list_font(void);
+color_t widget_sidebar_city_get_panel_text_color(void);
+int widget_sidebar_city_get_panel_list_text_y(int row_y, int row_height);
 void widget_sidebar_city_get_panel_list_item(int index, int count, int *x, int *y, int *width, int *height);
 int widget_sidebar_city_panel_list_back_clicked(const mouse *m);
 int widget_sidebar_city_is_in_panel_list(const mouse *m);

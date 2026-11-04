@@ -343,23 +343,25 @@ static void draw_menu_buttons(void)
     }
 }
 
-static void draw_panel_item_value(building_type type, int x, int y, int width, int *text_width)
+static void draw_panel_item_value(building_type type, int x, int y, int width, int height, int *text_width)
 {
+    font_t font = widget_sidebar_city_get_panel_list_font();
+    color_t color = widget_sidebar_city_get_panel_text_color();
+    int text_y = widget_sidebar_city_get_panel_list_text_y(y, height);
     if (is_auto_cycle_button(type)) {
         int state_text = 5 - building_construction_is_auto_cycling(selected_auto_cycle_group());
-        int state_width = lang_text_get_width(18, state_text, FONT_NORMAL_GREEN);
-        lang_text_draw(18, state_text, x + width - PANEL_TEXT_MARGIN - state_width, y, FONT_NORMAL_GREEN);
+        int state_width = lang_text_get_width(18, state_text, font);
+        lang_text_draw_colored(18, state_text, x + width - PANEL_TEXT_MARGIN - state_width, text_y, font, color);
         *text_width -= state_width + PANEL_TEXT_MARGIN;
         return;
     }
     int cost = get_menu_item_cost(type);
     if (cost) {
-        int cost_width = text_get_number_width(cost, '@', "", FONT_NORMAL_GREEN);
-        text_draw_number(cost, '@', "", x + width - PANEL_TEXT_MARGIN - cost_width, y, FONT_NORMAL_GREEN, 0);
+        int cost_width = text_get_number_width(cost, '@', "", font);
+        text_draw_number(cost, '@', "", x + width - PANEL_TEXT_MARGIN - cost_width, text_y, font, color);
         *text_width -= cost_width + PANEL_TEXT_MARGIN;
     } else {
-        image_draw(assets_get_image_id("UI", "Expand Menu Icon"), x + width - 17, y - 3, COLOR_MASK_NONE, SCALE_NONE);
-        *text_width -= 17;
+        *text_width -= widget_sidebar_city_draw_panel_list_arrow(x, y, width, height);
     }
 }
 
@@ -381,12 +383,13 @@ static void draw_panel_menu(void)
             .parameter1 = i + 1,
         };
         widget_sidebar_city_draw_panel_list_row(x, y, width, height, data.focus_button_id == i + 1);
-        int text_y = y + 7;
+        int text_y = widget_sidebar_city_get_panel_list_text_y(y, height);
         int text_width = width - 2 * PANEL_TEXT_MARGIN;
-        draw_panel_item_value(type, x, text_y, width, &text_width);
+        draw_panel_item_value(type, x, y, width, height, &text_width);
         const uint8_t *name = is_auto_cycle_button(type) ? translation_for(TR_AUTO_CYCLE_TEMPLES) :
             get_menu_item_name(type);
-        text_draw_ellipsized(name, x + PANEL_TEXT_MARGIN, text_y, text_width, FONT_NORMAL_GREEN, 0);
+        text_draw_ellipsized(name, x + PANEL_TEXT_MARGIN, text_y, text_width,
+            widget_sidebar_city_get_panel_list_font(), widget_sidebar_city_get_panel_text_color());
     }
 }
 

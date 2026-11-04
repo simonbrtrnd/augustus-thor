@@ -8,6 +8,7 @@
 #include "city/warning.h"
 #include "core/config.h"
 #include "core/direction.h"
+#include "core/time.h"
 #include "game/campaign.h"
 #include "game/orientation.h"
 #include "game/state.h"
@@ -17,6 +18,7 @@
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/renderer.h"
 #include "graphics/screen.h"
 #include "graphics/second_screen.h"
 #include "graphics/text.h"
@@ -38,14 +40,23 @@
 #include "window/mission_briefing.h"
 #include "window/overlay_menu.h"
 
+#include <math.h>
+
 #define MINIMAP_Y_OFFSET 59
 #define PANEL_MARGIN 6
 #define PANEL_LEFT_COLUMN_WIDTH 130
-#define PANEL_MINIMAP_HEIGHT 84
+#define PANEL_MINIMAP_HEIGHT 96
 #define PANEL_RATINGS_Y 206
 #define PANEL_LIST_ROW_HEIGHT 24
 #define PANEL_LIST_ROW_GAP 4
 #define PANEL_LIST_COLUMN_GAP 6
+#define PANEL_LIST_TEXT_MARGIN 6
+#define PANEL_LIST_FONT FONT_SMALL_PLAIN
+#define PANEL_LIST_FONT_CAP_HEIGHT 8
+#define PANEL_TEXT_COLOR COLOR_BLACK
+#define PANEL_RATINGS_LINE_HEIGHT 12
+#define PANEL_PLATE_BEVEL 3
+#define PANEL_PRESSED_MILLIS 150
 
 static void button_overlay(int param1, int param2);
 static void button_collapse_expand(int param1, int param2);
@@ -111,49 +122,52 @@ static image_button buttons_top_expanded[] = {
     {123, 184, 33, 22, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
+static image_button panel_button_overlay[] = {
+    {142, 231, 162, 33, IB_NORMAL, 93, 0, button_overlay, button_help, 0, MESSAGE_DIALOG_OVERLAYS, 1},
+};
+
 static image_button panel_buttons_left[] = {
-    {6, 98, 130, 34, IB_NORMAL, 93, 0, button_overlay, button_help, 0, MESSAGE_DIALOG_OVERLAYS, 1},
-    {6, 138, 130, 28, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 0, button_advisors, button_none, 0, 0, 1},
-    {6, 172, 130, 28, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_help, 0,
+    {6, 110, 130, 42, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 0, button_advisors, button_none, 0, 0, 1},
+    {6, 158, 130, 42, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_help, 0,
         MESSAGE_DIALOG_EMPIRE_MAP, 1},
 };
 
 static image_button panel_buttons_build[] = {
-    {142, 6, 50, 38, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 0, button_build, button_none, BUILD_MENU_VACANT_HOUSE, 0, 1},
-    {198, 6, 50, 38, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 8, button_build, button_none, BUILD_MENU_CLEAR_LAND, 0, 1},
-    {254, 6, 50, 38, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 12, button_build, button_none, BUILD_MENU_ROAD, 0, 1},
-    {142, 50, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 4, button_build, button_none, BUILD_MENU_WATER, 0, 1},
-    {198, 50, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 40, button_build, button_none, BUILD_MENU_HEALTH, 0, 1},
-    {254, 50, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 28, button_build, button_none, BUILD_MENU_TEMPLES, 0, 1},
-    {142, 94, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 24, button_build, button_none, BUILD_MENU_EDUCATION, 0, 1},
-    {198, 94, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 20, button_build, button_none, BUILD_MENU_ENTERTAINMENT, 0, 1},
-    {254, 94, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 16, button_build, button_none, BUILD_MENU_ADMINISTRATION, 0, 1},
-    {142, 138, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 44, button_build, button_none, BUILD_MENU_ENGINEERING, 0, 1},
-    {198, 138, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 36, button_build, button_none, BUILD_MENU_SECURITY, 0, 1},
-    {254, 138, 50, 38, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 32, button_build, button_none, BUILD_MENU_INDUSTRY, 0, 1},
+    {142, 6, 50, 33, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 0, button_build, button_none, BUILD_MENU_VACANT_HOUSE, 0, 1},
+    {198, 6, 50, 33, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 8, button_build, button_none, BUILD_MENU_CLEAR_LAND, 0, 1},
+    {254, 6, 50, 33, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 12, button_build, button_none, BUILD_MENU_ROAD, 0, 1},
+    {142, 45, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 4, button_build, button_none, BUILD_MENU_WATER, 0, 1},
+    {198, 45, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 40, button_build, button_none, BUILD_MENU_HEALTH, 0, 1},
+    {254, 45, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 28, button_build, button_none, BUILD_MENU_TEMPLES, 0, 1},
+    {142, 84, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 24, button_build, button_none, BUILD_MENU_EDUCATION, 0, 1},
+    {198, 84, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 20, button_build, button_none, BUILD_MENU_ENTERTAINMENT, 0, 1},
+    {254, 84, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 16, button_build, button_none, BUILD_MENU_ADMINISTRATION, 0, 1},
+    {142, 123, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 44, button_build, button_none, BUILD_MENU_ENGINEERING, 0, 1},
+    {198, 123, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 36, button_build, button_none, BUILD_MENU_SECURITY, 0, 1},
+    {254, 123, 50, 33, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 32, button_build, button_none, BUILD_MENU_INDUSTRY, 0, 1},
 };
 
 static image_button panel_buttons_tools[] = {
-    {142, 182, 50, 38, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 48, button_undo, button_none, 0, 0, 1},
-    {198, 182, 50, 38, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_help, 0, MESSAGE_DIALOG_MESSAGES, 1},
-    {254, 182, 50, 38, IB_BUILD, GROUP_MESSAGE_ICON, 22, button_go_to_problem, button_none, 0, 0, 1},
-    {142, 226, 36, 38, IB_NORMAL, 0, 0, button_toggle_grid, button_none, 0, 0, 1, "UI", "Toggle Grid Button" },
-    {184, 226, 36, 38, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 3, button_rotate_north, button_none, 0, 0, 1},
-    {226, 226, 36, 38, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 6, button_rotate, button_none, 0, 0, 1},
-    {268, 226, 36, 38, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
+    {142, 162, 50, 33, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 48, button_undo, button_none, 0, 0, 1},
+    {198, 162, 50, 33, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_help, 0, MESSAGE_DIALOG_MESSAGES, 1},
+    {254, 162, 50, 33, IB_BUILD, GROUP_MESSAGE_ICON, 22, button_go_to_problem, button_none, 0, 0, 1},
+    {142, 201, 36, 24, IB_NORMAL, 0, 0, button_toggle_grid, button_none, 0, 0, 1, "UI", "Toggle Grid Button" },
+    {184, 201, 36, 24, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 3, button_rotate_north, button_none, 0, 0, 1},
+    {226, 201, 36, 24, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 6, button_rotate, button_none, 0, 0, 1},
+    {268, 201, 36, 24, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
 static struct {
     int focus_button_for_tooltip;
 } data;
 
-static void draw_overlay_text(int x, int y)
+static void draw_overlay_text(int x_offset)
 {
     if (game_state_overlay()) {
         const uint8_t *text = get_current_overlay_text();
-        text_draw_centered(text, x, y, 117, FONT_NORMAL_GREEN, 0);
+        text_draw_centered(text, x_offset, 32, 117, FONT_NORMAL_GREEN, 0);
     } else {
-        lang_text_draw_centered(6, 4, x, y, 117, FONT_NORMAL_GREEN);
+        lang_text_draw_centered(6, 4, x_offset, 32, 117, FONT_NORMAL_GREEN);
     }
 }
 
@@ -229,7 +243,7 @@ static void draw_expanded_background(int x_offset)
 {
     image_draw(image_group(GROUP_SIDE_PANEL) + 1, x_offset, 24, COLOR_MASK_NONE, SCALE_NONE);
     draw_buttons_expanded(x_offset);
-    draw_overlay_text(x_offset + 4, 32);
+    draw_overlay_text(x_offset + 4);
     draw_number_of_messages(x_offset);
     image_draw(window_build_menu_image(), x_offset + 6, 239, COLOR_MASK_NONE, SCALE_NONE);
     widget_minimap_update(0);
@@ -275,7 +289,7 @@ void widget_sidebar_city_draw_foreground(void)
     } else {
         int x_offset = sidebar_common_get_x_offset_expanded();
         draw_buttons_expanded(x_offset);
-        draw_overlay_text(x_offset + 4, 32);
+        draw_overlay_text(x_offset + 4);
         widget_minimap_draw_decorated(x_offset + 8, MINIMAP_Y_OFFSET, MINIMAP_WIDTH, MINIMAP_HEIGHT);
         draw_number_of_messages(x_offset);
     }
@@ -339,21 +353,36 @@ static int get_button_image_id(const image_button *button)
         button->image_offset;
 }
 
-static void get_button_image_position(const image_button *button, int *x, int *y)
+static int get_button_state_image_id(const image_button *button)
 {
-    const image *img = image_get(get_button_image_id(button));
-    *x = button->x_offset + (button->width - img->width) / 2;
-    *y = button->y_offset + (button->height - img->height) / 2;
+    int image_id = get_button_image_id(button);
+    if (!button->enabled) {
+        return image_id + 3;
+    }
+    if (button->pressed && time_get_millis() - button->pressed_since < PANEL_PRESSED_MILLIS) {
+        return image_id + 2;
+    }
+    return image_id;
 }
 
-static void draw_panel_buttons(image_button *buttons, int count)
+static float get_covering_placement(const image_button *button, const image *img, float *x, float *y)
+{
+    float scale = fmaxf((float) button->width / img->width, (float) button->height / img->height);
+    *x = button->x_offset + (button->width - img->width * scale) / 2.0f;
+    *y = button->y_offset + (button->height - img->height * scale) / 2.0f;
+    return scale;
+}
+
+static void draw_panel_covering_buttons(image_button *buttons, int count)
 {
     for (int i = 0; i < count; i++) {
         image_button *button = &buttons[i];
-        large_label_draw_custom_size(button->x_offset, button->y_offset, button->width, button->height);
-        int x, y;
-        get_button_image_position(button, &x, &y);
-        image_buttons_draw(x - button->x_offset, y - button->y_offset, button, 1);
+        const image *img = image_get(get_button_state_image_id(button));
+        float x, y;
+        float scale = get_covering_placement(button, img, &x, &y);
+        graphics_set_clip_rectangle(button->x_offset, button->y_offset, button->width, button->height);
+        graphics_renderer()->draw_image_advanced(img, x, y, COLOR_MASK_NONE, 1.0f / scale, 1.0f / scale, 0.0, 1);
+        graphics_reset_clip_rectangle();
     }
 }
 
@@ -363,12 +392,24 @@ static void draw_panel_ratings(int x, int y, int width, int height)
         city_rating_culture(), city_rating_prosperity(), city_rating_peace(), city_rating_favor()
     };
     large_label_draw_custom_size(x, y, width, height);
+    int text_height = 3 * PANEL_RATINGS_LINE_HEIGHT + PANEL_LIST_FONT_CAP_HEIGHT;
+    int first_line_y = y + (height - PANEL_PLATE_BEVEL - text_height) / 2;
     for (int i = 0; i < 4; i++) {
-        int text_y = y + 4 + 13 * i;
-        lang_text_draw(53, i + 1, x + 6, text_y, FONT_NORMAL_GREEN);
-        int number_width = text_get_number_width(ratings[i], '@', "", FONT_NORMAL_GREEN);
-        text_draw_number(ratings[i], '@', "", x + width - 6 - number_width, text_y, FONT_NORMAL_GREEN, 0);
+        int text_y = first_line_y + PANEL_RATINGS_LINE_HEIGHT * i;
+        lang_text_draw_colored(53, i + 1, x + PANEL_LIST_TEXT_MARGIN, text_y, PANEL_LIST_FONT, PANEL_TEXT_COLOR);
+        int number_width = text_get_number_width(ratings[i], '@', "", PANEL_LIST_FONT);
+        text_draw_number(ratings[i], '@', "", x + width - PANEL_LIST_TEXT_MARGIN - number_width, text_y,
+            PANEL_LIST_FONT, PANEL_TEXT_COLOR);
     }
+}
+
+static void draw_panel_overlay_button(void)
+{
+    const image_button *button = &panel_button_overlay[0];
+    large_label_draw_custom_size(button->x_offset, button->y_offset, button->width, button->height);
+    const uint8_t *text = game_state_overlay() ? get_current_overlay_text() : lang_get_string(6, 4);
+    text_draw_centered(text, button->x_offset, widget_sidebar_city_get_panel_list_text_y(button->y_offset,
+        button->height), button->width, PANEL_LIST_FONT, PANEL_TEXT_COLOR);
 }
 
 static void update_panel_buttons(void)
@@ -388,18 +429,17 @@ void widget_sidebar_city_draw_panel(void)
     update_panel_buttons();
     widget_minimap_draw_decorated(PANEL_MARGIN + 1, PANEL_MARGIN + 1, PANEL_LEFT_COLUMN_WIDTH - 2,
         PANEL_MINIMAP_HEIGHT);
-    draw_panel_buttons(panel_buttons_left, 3);
-    int overlay_x, overlay_y;
-    get_button_image_position(&panel_buttons_left[0], &overlay_x, &overlay_y);
-    draw_overlay_text(overlay_x, overlay_y + 5);
+    draw_panel_overlay_button();
+    draw_panel_covering_buttons(panel_buttons_left, 2);
     draw_panel_ratings(PANEL_MARGIN, PANEL_RATINGS_Y, PANEL_LEFT_COLUMN_WIDTH,
         second_screen_height() - PANEL_MARGIN - PANEL_RATINGS_Y);
-    draw_panel_buttons(panel_buttons_build, 12);
-    draw_panel_buttons(panel_buttons_tools, 7);
+    draw_panel_covering_buttons(panel_buttons_build, 12);
+    draw_panel_covering_buttons(panel_buttons_tools, 7);
     if (panel_buttons_tools[1].enabled) {
-        int x, y;
-        get_button_image_position(&panel_buttons_tools[1], &x, &y);
-        draw_message_count(x + 37, y + 8);
+        const image *img = image_get(get_button_image_id(&panel_buttons_tools[1]));
+        float x, y;
+        float scale = get_covering_placement(&panel_buttons_tools[1], img, &x, &y);
+        draw_message_count((int) (x + 37 * scale), (int) (y + 8 * scale));
     }
 }
 
@@ -422,7 +462,8 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m)
     if (widget_minimap_handle_mouse(m)) {
         return 1;
     }
-    return image_buttons_handle_mouse(m, 0, 0, panel_buttons_left, 3, 0) ||
+    return image_buttons_handle_mouse(m, 0, 0, panel_button_overlay, 1, 0) ||
+        image_buttons_handle_mouse(m, 0, 0, panel_buttons_left, 2, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_build, 12, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_tools, 7, 0);
 }
@@ -445,12 +486,37 @@ void widget_sidebar_city_draw_panel_list_row(int x, int y, int width, int height
     }
 }
 
+font_t widget_sidebar_city_get_panel_list_font(void)
+{
+    return PANEL_LIST_FONT;
+}
+
+color_t widget_sidebar_city_get_panel_text_color(void)
+{
+    return PANEL_TEXT_COLOR;
+}
+
+int widget_sidebar_city_get_panel_list_text_y(int row_y, int row_height)
+{
+    return row_y + (row_height - PANEL_PLATE_BEVEL - PANEL_LIST_FONT_CAP_HEIGHT) / 2;
+}
+
+int widget_sidebar_city_draw_panel_list_arrow(int x, int y, int width, int height)
+{
+    int image_id = assets_get_image_id("UI", "Expand Menu Icon");
+    const image *img = image_get(image_id);
+    image_draw(image_id, x + width - PANEL_LIST_TEXT_MARGIN - img->width,
+        y + (height - PANEL_PLATE_BEVEL - img->height) / 2, COLOR_MASK_NONE, SCALE_NONE);
+    return img->width + PANEL_LIST_TEXT_MARGIN;
+}
+
 void widget_sidebar_city_draw_panel_list_frame(void)
 {
     draw_panel_background();
     widget_sidebar_city_draw_panel_list_row(PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(),
         PANEL_LIST_ROW_HEIGHT, 0);
-    lang_text_draw_centered(12, 0, PANEL_MARGIN, PANEL_MARGIN + 7, get_panel_list_width(), FONT_NORMAL_GREEN);
+    lang_text_draw_centered_colored(12, 0, PANEL_MARGIN, widget_sidebar_city_get_panel_list_text_y(PANEL_MARGIN,
+        PANEL_LIST_ROW_HEIGHT), get_panel_list_width(), PANEL_LIST_FONT, PANEL_TEXT_COLOR);
 }
 
 void widget_sidebar_city_get_panel_list_item(int index, int count, int *x, int *y, int *width, int *height)

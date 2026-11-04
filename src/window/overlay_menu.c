@@ -511,10 +511,12 @@ static int count_entries(const overlay_menu_entry *entries)
 
 static void draw_panel_item_text(const uint8_t *text, int x, int y, int width)
 {
-    if (text_get_width(text, FONT_NORMAL_GREEN) <= width) {
-        text_draw_centered(text, x, y, width, FONT_NORMAL_GREEN, COLOR_MASK_NONE);
+    font_t font = widget_sidebar_city_get_panel_list_font();
+    color_t color = widget_sidebar_city_get_panel_text_color();
+    if (text_get_width(text, font) <= width) {
+        text_draw_centered(text, x, y, width, font, color);
     } else {
-        text_draw_ellipsized(text, x, y, width, FONT_NORMAL_GREEN, COLOR_MASK_NONE);
+        text_draw_ellipsized(text, x, y, width, font, color);
     }
 }
 
@@ -523,8 +525,6 @@ static void draw_panel_menu(void)
     widget_sidebar_city_draw_panel_list_frame();
     const overlay_menu_entry *entries = panel.levels[panel.depth];
     panel.num_buttons = count_entries(entries);
-    int expand_icon = assets_get_image_id("UI", "Expand Menu Icon");
-
     for (int i = 0; i < panel.num_buttons; i++) {
         int x, y, width, height;
         widget_sidebar_city_get_panel_list_item(i, panel.num_buttons, &x, &y, &width, &height);
@@ -540,10 +540,10 @@ static void draw_panel_menu(void)
         widget_sidebar_city_draw_panel_list_row(x, y, width, height, is_highlighted);
         int text_width = width - 8;
         if (entries[i].submenu) {
-            image_draw(expand_icon, x + width - 17, y + 4, COLOR_MASK_NONE, SCALE_NONE);
-            text_width -= 13;
+            text_width -= widget_sidebar_city_draw_panel_list_arrow(x, y, width, height);
         }
-        draw_panel_item_text(get_overlay_text(&entries[i]), x + 4, y + 7, text_width);
+        draw_panel_item_text(get_overlay_text(&entries[i]), x + 4, widget_sidebar_city_get_panel_list_text_y(y, height),
+            text_width);
     }
 }
 

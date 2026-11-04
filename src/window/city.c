@@ -45,7 +45,6 @@
 #include "widget/city/city.h"
 #include "widget/top_menu.h"
 #include "widget/sidebar/city.h"
-#include "widget/sidebar/extra.h"
 #include "widget/sidebar/military.h"
 #include "window/advisors.h"
 #include "window/building_info.h"
@@ -311,7 +310,7 @@ static void draw_foreground(void)
         draw_time_left();
         window_city_draw_custom_variables_text_display();
         widget_city_draw_construction_buttons();
-        if (!mouse_get()->is_touch || sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
+        if (!widget_city_shows_pause_button()) {
             draw_paused_banner();
         }
     }
@@ -339,7 +338,7 @@ static void draw_foreground_military(void)
     }
     draw_time_left();
     widget_city_draw_construction_buttons();
-    if (!mouse_get()->is_touch || sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
+    if (!widget_city_shows_pause_button()) {
         draw_paused_banner();
     }
 }

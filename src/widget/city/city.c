@@ -23,6 +23,7 @@
 #include "graphics/menu.h"
 #include "graphics/image.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/video.h"
 #include "graphics/window.h"
@@ -164,11 +165,18 @@ static void draw_pause_icon(int x_offset, int y_offset)
     graphics_fill_rect(x_offset + 4, y_offset + 4, 8, 13, COLOR_WHITE);
 }
 
+static int has_pause_button_on_map(void)
+{
+    return !second_screen_is_active() && !sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED);
+}
+
+int widget_city_shows_pause_button(void)
+{
+    return mouse_get()->is_touch && has_pause_button_on_map();
+}
+
 static void draw_pause_button(void)
 {
-    if (!mouse_get()->is_touch) {
-        return;
-    }
     inner_panel_draw(16, 40, 3, 2);
     button_border_draw(16, 40, 3 * BLOCK_SIZE, 2 * BLOCK_SIZE, 0);
     if (game_state_is_paused()) {
@@ -204,7 +212,7 @@ static void draw_construction_buttons(void)
 
     if ((mouse_get()->is_touch || config_get(CONFIG_UI_ALWAYS_SHOW_ROTATION_BUTTONS)) &&
         building_construction_can_rotate()) {
-        if (!sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
+        if (has_pause_button_on_map()) {
             x_offset = 4 * BLOCK_SIZE + 8;
         } else {
             x_offset = 16;
@@ -228,7 +236,7 @@ static void draw_construction_buttons(void)
 
 void widget_city_draw_construction_buttons(void)
 {
-    if (!sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
+    if (widget_city_shows_pause_button()) {
         draw_pause_button();
     }
     draw_construction_buttons();
@@ -236,7 +244,7 @@ void widget_city_draw_construction_buttons(void)
 
 static int is_pause_button(int x, int y)
 {
-    return !sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED) &&
+    return has_pause_button_on_map() &&
         x < 4 * BLOCK_SIZE + 4 && y >= 24 && y < 56 + 4 * BLOCK_SIZE;
 }
 
@@ -260,7 +268,7 @@ static int is_rotate_backward_button(int x, int y)
     city_view_get_viewport(&city_x, &city_y, &width, &height);
 
     int sidebar_pause_button = sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED);
-    int x_offset = sidebar_pause_button ? 16 : 4 * BLOCK_SIZE + 4;
+    int x_offset = has_pause_button_on_map() ? 4 * BLOCK_SIZE + 4 : 16;
     int y_offset = sidebar_pause_button && width < 680 && game_state_is_paused() ? 84 : 24;
     return x >= x_offset && x < x_offset + 3 * BLOCK_SIZE &&
         y >= y_offset && y < y_offset + 4 * BLOCK_SIZE;
@@ -272,7 +280,7 @@ static int is_rotate_forward_button(int x, int y)
     city_view_get_viewport(&city_x, &city_y, &width, &height);
 
     int sidebar_pause_button = sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED);
-    int x_offset = sidebar_pause_button ? 4 * BLOCK_SIZE + 4 : 7 * BLOCK_SIZE + 4;
+    int x_offset = has_pause_button_on_map() ? 7 * BLOCK_SIZE + 4 : 4 * BLOCK_SIZE + 4;
     int y_offset = sidebar_pause_button && width < 680 && game_state_is_paused() ? 84 : 24;
     return x >= x_offset && x < x_offset + 3 * BLOCK_SIZE &&
         y >= y_offset && y < y_offset + 4 * BLOCK_SIZE;

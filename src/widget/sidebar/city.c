@@ -70,6 +70,7 @@ static void button_empire(int param1, int param2);
 static void button_toggle_grid(int param1, int param2);
 static void button_rotate_north(int param1, int param2);
 static void button_rotate(int clockwise, int param2);
+static void button_toggle_pause(int param1, int param2);
 
 static image_button buttons_overlays_collapse_sidebar[] = {
     {127, 5, 31, 20, IB_NORMAL, 90, 0, button_collapse_expand, button_none, 0, 0, 1},
@@ -123,7 +124,11 @@ static image_button buttons_top_expanded[] = {
 };
 
 static image_button panel_button_overlay[] = {
-    {142, 6, 162, 33, IB_NORMAL, 93, 0, button_overlay, button_help, 0, MESSAGE_DIALOG_OVERLAYS, 1},
+    {142, 6, 123, 33, IB_NORMAL, 93, 0, button_overlay, button_help, 0, MESSAGE_DIALOG_OVERLAYS, 1},
+};
+
+static image_button panel_button_pause[] = {
+    {271, 6, 33, 33, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, "UI", "Pause Button"},
 };
 
 static image_button panel_buttons_left[] = {
@@ -408,8 +413,9 @@ static void draw_panel_overlay_button(void)
     const image_button *button = &panel_button_overlay[0];
     large_label_draw_custom_size(button->x_offset, button->y_offset, button->width, button->height);
     const uint8_t *text = game_state_overlay() ? get_current_overlay_text() : lang_get_string(6, 4);
-    text_draw_centered(text, button->x_offset, widget_sidebar_city_get_panel_list_text_y(button->y_offset,
-        button->height), button->width, PANEL_LIST_FONT, PANEL_TEXT_COLOR);
+    text_draw_centered_ellipsized(text, button->x_offset + PANEL_LIST_TEXT_MARGIN,
+        widget_sidebar_city_get_panel_list_text_y(button->y_offset, button->height),
+        button->width - 2 * PANEL_LIST_TEXT_MARGIN, PANEL_LIST_FONT, PANEL_TEXT_COLOR);
 }
 
 static void update_panel_buttons(void)
@@ -421,6 +427,7 @@ static void update_panel_buttons(void)
     panel_buttons_tools[0].enabled = game_can_undo();
     panel_buttons_tools[1].enabled = has_messages_to_show();
     panel_buttons_tools[2].enabled = city_message_problem_area_count();
+    panel_button_pause[0].image_name = game_state_is_paused() ? "Play Button" : "Pause Button";
 }
 
 void widget_sidebar_city_draw_panel(void)
@@ -430,6 +437,7 @@ void widget_sidebar_city_draw_panel(void)
     widget_minimap_draw_decorated(PANEL_MARGIN + 1, PANEL_MARGIN + 1, PANEL_LEFT_COLUMN_WIDTH - 2,
         PANEL_MINIMAP_HEIGHT);
     draw_panel_overlay_button();
+    draw_panel_covering_buttons(panel_button_pause, 1);
     draw_panel_covering_buttons(panel_buttons_left, 2);
     draw_panel_ratings(PANEL_MARGIN, PANEL_RATINGS_Y, PANEL_LEFT_COLUMN_WIDTH,
         second_screen_height() - PANEL_MARGIN - PANEL_RATINGS_Y);
@@ -463,6 +471,7 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m)
         return 1;
     }
     return image_buttons_handle_mouse(m, 0, 0, panel_button_overlay, 1, 0) ||
+        image_buttons_handle_mouse(m, 0, 0, panel_button_pause, 1, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_left, 2, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_build, 12, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_tools, 7, 0);
@@ -649,4 +658,9 @@ static void button_rotate(int clockwise, int param2)
         game_orientation_rotate_left();
     }
     window_invalidate();
+}
+
+static void button_toggle_pause(int param1, int param2)
+{
+    game_state_toggle_paused();
 }

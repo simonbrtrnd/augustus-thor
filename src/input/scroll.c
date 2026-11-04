@@ -9,6 +9,7 @@
 #include "game/settings.h"
 #include "game/system.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "input/touch.h"
 
 #include <math.h>
@@ -377,11 +378,14 @@ static int get_direction(const mouse* m, int window_scroll)
         y -= data.limits.y;
         data.constant_input = 1;
     }
+    // The second screen holds the touch panel, and the camera is moved with a stick or by dragging
+    int is_mouse_edge_scrolling = !m->is_touch && !config_get(CONFIG_UI_DISABLE_MOUSE_EDGE_SCROLLING) &&
+        !second_screen_is_active();
     // mouse near map edge
     // NOTE: using <= width/height (instead of <) to compensate for rounding
     // errors caused by scaling the display. SDL adds a 1px border to either
     // the right or the bottom when the aspect ratio does not match exactly.
-    if (window_scroll && ((!m->is_touch && !config_get(CONFIG_UI_DISABLE_MOUSE_EDGE_SCROLLING)) || data.limits.active) &&
+    if (window_scroll && (is_mouse_edge_scrolling || data.limits.active) &&
         (x >= 0 && x <= width && y >= 0 && y <= height)) {
         if (x < border) {
             left = 1;

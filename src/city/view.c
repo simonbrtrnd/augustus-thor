@@ -7,6 +7,7 @@
 #include "editor/editor.h"
 #include "graphics/menu.h"
 #include "graphics/renderer.h"
+#include "graphics/second_screen.h"
 #include "map/grid.h"
 #include "map/image.h"
 #include "widget/minimap.h"
@@ -596,14 +597,19 @@ static void set_viewport(int x_offset, int y_offset, int width, int height)
     data.viewport.height_tiles = calc_adjust_with_percentage(height, data.scale) / HALF_TILE_HEIGHT_PIXELS;
 }
 
+static int get_sidebar_width(int width_on_screen)
+{
+    return second_screen_is_active() ? 0 : width_on_screen;
+}
+
 static void set_viewport_with_sidebar(void)
 {
-    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - 160, data.screen_height - TOP_MENU_HEIGHT);
+    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - get_sidebar_width(160), data.screen_height - TOP_MENU_HEIGHT);
 }
 
 static void set_viewport_without_sidebar(void)
 {
-    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - 40, data.screen_height - TOP_MENU_HEIGHT);
+    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - get_sidebar_width(40), data.screen_height - TOP_MENU_HEIGHT);
 }
 
 void city_view_set_scale(int scale)

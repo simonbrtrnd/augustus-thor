@@ -2,6 +2,7 @@
 
 #include "game/system.h"
 #include "graphics/graphics.h"
+#include "graphics/second_screen.h"
 #include "graphics/warning.h"
 #include "input/cursor.h"
 #include "input/hotkey.h"
@@ -136,6 +137,7 @@ void window_draw(int force)
         data.refresh_on_draw = 0;
         data.refresh_immediate = 0;
         graphics_clear_screen();
+        second_screen_reset_content();
         w->draw_background();
     }
     w->draw_foreground();
@@ -146,6 +148,13 @@ void window_draw(int force)
     tooltip_handle(m, w->get_tooltip);
     warning_draw();
     update_input_after();
+}
+
+void window_handle_second_screen_input(const mouse *m)
+{
+    if (data.current_window->handle_second_screen_input) {
+        data.current_window->handle_second_screen_input(m);
+    }
 }
 
 void window_draw_underlying_window(void)

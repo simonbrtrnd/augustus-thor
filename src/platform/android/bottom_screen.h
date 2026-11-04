@@ -4,13 +4,13 @@
 #ifdef __ANDROID__
 
 /**
- * Applies the touches received on the second screen since the last frame as mouse input.
+ * Turns the second screen on or off for the game, and passes the touches received on it
+ * since the last frame to the current window.
  */
 void android_bottom_screen_handle_input(void);
 
 /**
- * Copies the sidebar from the frame being drawn to the second screen.
- * Must be called while the frame's render target is still active.
+ * Shows what the game drew for the second screen.
  */
 void android_bottom_screen_present(void);
 

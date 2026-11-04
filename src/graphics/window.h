@@ -111,6 +111,7 @@ typedef struct {
     void (*handle_input)(const mouse *m, const hotkeys *h);
     void (*get_tooltip)(tooltip_context *c);
     void (*on_return)(window_id from);
+    void (*handle_second_screen_input)(const mouse *m);
 } window_type;
 
 /**
@@ -130,6 +131,11 @@ void window_request_refresh(void);
 int window_is_invalid(void);
 
 void window_draw(int force);
+
+/**
+ * Passes mouse input from the second screen to the current window
+ */
+void window_handle_second_screen_input(const mouse *m);
 
 void window_draw_underlying_window(void);
 

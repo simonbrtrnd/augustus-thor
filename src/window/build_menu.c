@@ -18,6 +18,7 @@
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -25,6 +26,7 @@
 #include "translation/translation.h"
 #include "widget/city/city.h"
 #include "widget/sidebar/city.h"
+#include "widget/sidebar/common.h"
 #include "window/city.h"
 
 #define MENU_X_OFFSET 298
@@ -173,9 +175,8 @@ static void draw_background(void)
 
 static int get_sidebar_x_offset(void)
 {
-    int view_x, view_y, view_width, view_height;
-    city_view_get_viewport(&view_x, &view_y, &view_width, &view_height);
-    return view_x + view_width;
+    return city_view_is_sidebar_collapsed() ?
+        sidebar_common_get_x_offset_collapsed() : sidebar_common_get_x_offset_expanded();
 }
 
 static int is_auto_cycle_button(building_type type)
@@ -333,7 +334,7 @@ static void draw_foreground(void)
 {
     window_city_draw();
     window_city_draw_custom_variables_text_display();
-    draw_menu_buttons();
+    second_screen_draw(draw_menu_buttons);
 }
 
 static int click_outside_menu(const mouse *m, int x_offset)
@@ -371,17 +372,28 @@ static int handle_input_build_menu_index(const hotkeys *h)
     return 0;
 }
 
+static int handle_menu_mouse(const mouse *m)
+{
+    return handle_build_submenu(m) || widget_sidebar_city_handle_mouse_build_menu(m);
+}
+
 static void handle_input(const mouse *m, const hotkeys *h)
 {
-    if (handle_build_submenu(m) ||
-        widget_sidebar_city_handle_mouse_build_menu(m) ||
-        handle_input_build_menu_index(h)) {
+    int is_menu_on_main_screen = !second_screen_is_active();
+    if ((is_menu_on_main_screen && handle_menu_mouse(m)) || handle_input_build_menu_index(h)) {
         return;
     }
-    if (input_go_back_requested(m, h) || click_outside_menu(m, get_sidebar_x_offset())) {
-        data.selected_submenu = SUBMENU_NONE;
-        window_city_show();
-        return;
+    int clicked_outside_menu = is_menu_on_main_screen ?
+        click_outside_menu(m, get_sidebar_x_offset()) : m->left.went_up;
+    if (input_go_back_requested(m, h) || clicked_outside_menu) {
+        window_build_menu_hide();
+    }
+}
+
+static void handle_second_screen_input(const mouse *m)
+{
+    if (!handle_menu_mouse(m) && click_outside_menu(m, get_sidebar_x_offset())) {
+        window_build_menu_hide();
     }
 }
 
@@ -462,7 +474,7 @@ static void generate_tooltip_text_for_monument(building_type monument)
 
 static void get_tooltip(tooltip_context *c)
 {
-    if (!data.focus_button_id || data.selected_submenu == SUBMENU_NONE ||
+    if (second_screen_is_active() || !data.focus_button_id || data.selected_submenu == SUBMENU_NONE ||
         mouse_get()->x > get_sidebar_x_offset() - MENU_X_OFFSET + MENU_ICON_WIDTH * 3) {
         return;
     }
@@ -489,7 +501,9 @@ void window_build_menu_show(int submenu)
             draw_background,
             draw_foreground,
             handle_input,
-            get_tooltip
+            get_tooltip,
+            0,
+            handle_second_screen_input
         };
         window_show(&window);
     }

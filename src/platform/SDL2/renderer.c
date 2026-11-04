@@ -74,6 +74,7 @@ typedef struct silhouette_texture {
 static struct {
     SDL_Renderer *renderer;
     SDL_Texture *render_texture;
+    SDL_Texture *second_screen_texture;
     int is_software_renderer;
     int paused;
     struct {
@@ -130,6 +131,52 @@ static int save_screen_buffer(color_t *pixels, int x, int y, int width, int heig
     SDL_Rect rect = { x, y, width, height };
     return SDL_RenderReadPixels(data.renderer, &rect, SDL_PIXELFORMAT_ARGB8888, pixels,
         row_width * sizeof(color_t)) == 0;
+}
+
+static int has_size_of_render_texture(SDL_Texture *texture)
+{
+    int width, height, render_width, render_height;
+    SDL_QueryTexture(texture, 0, 0, &width, &height);
+    SDL_QueryTexture(data.render_texture, 0, 0, &render_width, &render_height);
+    return width == render_width && height == render_height;
+}
+
+static int begin_second_screen_drawing(void)
+{
+    if (data.paused || !data.render_texture) {
+        return 0;
+    }
+    if (data.second_screen_texture && !has_size_of_render_texture(data.second_screen_texture)) {
+        SDL_DestroyTexture(data.second_screen_texture);
+        data.second_screen_texture = 0;
+    }
+    if (!data.second_screen_texture) {
+        int width, height;
+        SDL_QueryTexture(data.render_texture, 0, 0, &width, &height);
+        data.second_screen_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ABGR8888,
+            SDL_TEXTUREACCESS_TARGET, width, height);
+        if (!data.second_screen_texture) {
+            return 0;
+        }
+    }
+    return SDL_SetRenderTarget(data.renderer, data.second_screen_texture) == 0;
+}
+
+static void end_second_screen_drawing(void)
+{
+    SDL_SetRenderTarget(data.renderer, data.render_texture);
+}
+
+static int save_second_screen_buffer(color_t *pixels, int x, int y, int width, int height, int row_width)
+{
+    if (data.paused || !data.second_screen_texture) {
+        return 0;
+    }
+    SDL_Texture *former_target = SDL_GetRenderTarget(data.renderer);
+    SDL_SetRenderTarget(data.renderer, data.second_screen_texture);
+    int saved = save_screen_buffer(pixels, x, y, width, height, row_width);
+    SDL_SetRenderTarget(data.renderer, former_target);
+    return saved;
 }
 
 static void draw_line(int x_start, int x_end, int y_start, int y_end, color_t color)
@@ -1184,6 +1231,9 @@ static void create_renderer_interface(void)
     data.renderer_interface.free_unpacked_image = free_unpacked_image;
     data.renderer_interface.should_pack_image = should_pack_image;
     data.renderer_interface.update_scale = update_scale;
+    data.renderer_interface.begin_second_screen_drawing = begin_second_screen_drawing;
+    data.renderer_interface.end_second_screen_drawing = end_second_screen_drawing;
+    data.renderer_interface.save_second_screen_buffer = save_second_screen_buffer;
 
     graphics_renderer_set_interface(&data.renderer_interface);
 }
@@ -1256,6 +1306,10 @@ static void destroy_render_texture(void)
     if (data.render_texture) {
         SDL_DestroyTexture(data.render_texture);
         data.render_texture = 0;
+    }
+    if (data.second_screen_texture) {
+        SDL_DestroyTexture(data.second_screen_texture);
+        data.second_screen_texture = 0;
     }
     if (data.tooltip.texture) {
         SDL_DestroyTexture(data.tooltip.texture);

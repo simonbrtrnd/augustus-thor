@@ -95,6 +95,10 @@ typedef struct {
     int (*should_pack_image)(int width, int height);
 
     void (*update_scale)(int city_scale);
+
+    int (*begin_second_screen_drawing)(void);
+    void (*end_second_screen_drawing)(void);
+    int (*save_second_screen_buffer)(color_t *pixels, int x, int y, int width, int height, int row_width);
 } graphics_renderer_interface;
 
 const graphics_renderer_interface *graphics_renderer(void);

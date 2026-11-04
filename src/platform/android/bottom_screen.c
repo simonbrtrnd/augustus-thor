@@ -5,8 +5,10 @@
 #include "graphics/color.h"
 #include "graphics/menu.h"
 #include "graphics/renderer.h"
+#include "graphics/screen.h"
+#include "graphics/second_screen.h"
+#include "graphics/window.h"
 #include "input/mouse.h"
-#include "widget/sidebar/common.h"
 
 #include <android/native_window_jni.h>
 #include <jni.h>
@@ -46,25 +48,30 @@ static struct {
     int height;
     touch_event pending[MAX_PENDING_TOUCHES];
     int pending_count;
-    int is_pressing;
     color_t *pixels;
     int pixels_size;
 } data = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
-static area get_sidebar_area(void)
+static int min(int a, int b)
 {
-    area sidebar = {
-        sidebar_common_get_x_offset_expanded(), TOP_MENU_HEIGHT,
-        SIDEBAR_EXPANDED_WIDTH, sidebar_common_get_height()
-    };
-    return sidebar;
+    return a < b ? a : b;
 }
 
-static area get_panel_area(int width, int height)
+static area get_screen_area(int width, int height)
 {
-    area sidebar = get_sidebar_area();
-    area panel = { (width - sidebar.width) / 2, (height - sidebar.height) / 2, sidebar.width, sidebar.height };
-    return panel;
+    int area_width = min(width, screen_width());
+    int area_height = min(height, screen_height() - TOP_MENU_HEIGHT);
+    area screen_area = { screen_width() - area_width, TOP_MENU_HEIGHT, area_width, area_height };
+    return screen_area;
+}
+
+static area get_window_area(int width, int height)
+{
+    area screen_area = get_screen_area(width, height);
+    area window_area = {
+        width - screen_area.width, (height - screen_area.height) / 2, screen_area.width, screen_area.height
+    };
+    return window_area;
 }
 
 static uint32_t to_window_pixel(color_t color)
@@ -72,9 +79,13 @@ static uint32_t to_window_pixel(color_t color)
     return (color & 0xff00ff00) | ((color & 0xff) << 16) | ((color >> 16) & 0xff);
 }
 
-static int read_sidebar(area sidebar)
+static int read_second_screen(area screen_area)
 {
-    int size = sidebar.width * sidebar.height;
+    const graphics_renderer_interface *renderer = graphics_renderer();
+    if (!second_screen_has_content() || !renderer->save_second_screen_buffer) {
+        return 0;
+    }
+    int size = screen_area.width * screen_area.height;
     if (size > data.pixels_size) {
         color_t *pixels = realloc(data.pixels, size * sizeof(color_t));
         if (!pixels) {
@@ -83,16 +94,12 @@ static int read_sidebar(area sidebar)
         data.pixels = pixels;
         data.pixels_size = size;
     }
-    return graphics_renderer()->save_screen_buffer(data.pixels, sidebar.x, sidebar.y,
-        sidebar.width, sidebar.height, sidebar.width);
+    return renderer->save_second_screen_buffer(data.pixels, screen_area.x, screen_area.y,
+        screen_area.width, screen_area.height, screen_area.width);
 }
 
-static void draw_sidebar(void)
+static void draw_window(void)
 {
-    area sidebar = get_sidebar_area();
-    if (!read_sidebar(sidebar)) {
-        return;
-    }
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(data.window, &buffer, 0) != 0) {
         return;
@@ -101,16 +108,14 @@ static void draw_sidebar(void)
     for (int i = 0; i < buffer.stride * buffer.height; i++) {
         bits[i] = WINDOW_BLACK;
     }
-    area panel = get_panel_area(buffer.width, buffer.height);
-    for (int y = 0; y < panel.height; y++) {
-        int window_y = panel.y + y;
-        if (window_y < 0 || window_y >= buffer.height) {
-            continue;
-        }
-        for (int x = 0; x < panel.width; x++) {
-            int window_x = panel.x + x;
-            if (window_x >= 0 && window_x < buffer.width) {
-                bits[window_y * buffer.stride + window_x] = to_window_pixel(data.pixels[y * panel.width + x]);
+    area screen_area = get_screen_area(buffer.width, buffer.height);
+    if (read_second_screen(screen_area)) {
+        area window_area = get_window_area(buffer.width, buffer.height);
+        for (int y = 0; y < window_area.height; y++) {
+            uint32_t *row = &bits[(window_area.y + y) * buffer.stride + window_area.x];
+            const color_t *pixels = &data.pixels[y * window_area.width];
+            for (int x = 0; x < window_area.width; x++) {
+                row[x] = to_window_pixel(pixels[x]);
             }
         }
     }
@@ -121,50 +126,36 @@ void android_bottom_screen_present(void)
 {
     pthread_mutex_lock(&data.lock);
     if (data.window) {
-        draw_sidebar();
+        draw_window();
     }
     pthread_mutex_unlock(&data.lock);
 }
 
-static int clamp(int value, int min, int max)
+static mouse to_screen_mouse(const touch_event *event, int width, int height)
 {
-    return value < min ? min : (value > max ? max : value);
-}
-
-static void handle_touch(const touch_event *event, int width, int height)
-{
-    area sidebar = get_sidebar_area();
-    area panel = get_panel_area(width, height);
-    int x = (int) (event->x * width) - panel.x;
-    int y = (int) (event->y * height) - panel.y;
-    int is_inside = x >= 0 && x < panel.width && y >= 0 && y < panel.height;
-    int screen_x = sidebar.x + clamp(x, 0, panel.width - 1);
-    int screen_y = sidebar.y + clamp(y, 0, panel.height - 1);
-
+    area screen_area = get_screen_area(width, height);
+    area window_area = get_window_area(width, height);
+    mouse m = { 0 };
+    m.x = screen_area.x + (int) (event->x * width) - window_area.x;
+    m.y = screen_area.y + (int) (event->y * height) - window_area.y;
+    m.is_inside_window = 1;
+    m.window_has_focus = 1;
+    m.is_touch = 1;
     switch (event->action) {
         case MOTION_ACTION_DOWN:
-            if (is_inside) {
-                data.is_pressing = 1;
-                mouse_set_position(screen_x, screen_y);
-                mouse_set_left_down(1);
-            }
+            m.left.went_down = 1;
+            m.left.is_down = 1;
             break;
         case MOTION_ACTION_MOVE:
-            if (data.is_pressing) {
-                mouse_set_position(screen_x, screen_y);
-            }
+            m.left.is_down = 1;
             break;
         case MOTION_ACTION_UP:
-        case MOTION_ACTION_CANCEL:
-            if (data.is_pressing) {
-                data.is_pressing = 0;
-                mouse_set_position(screen_x, screen_y);
-                mouse_set_left_down(0);
-            }
+            m.left.went_up = 1;
             break;
         default:
             break;
     }
+    return m;
 }
 
 void android_bottom_screen_handle_input(void)
@@ -177,10 +168,13 @@ void android_bottom_screen_handle_input(void)
     data.pending_count = 0;
     int width = data.width;
     int height = data.height;
+    int has_window = data.window != 0;
     pthread_mutex_unlock(&data.lock);
 
+    second_screen_set_active(has_window);
     for (int i = 0; i < count; i++) {
-        handle_touch(&events[i], width, height);
+        mouse m = to_screen_mouse(&events[i], width, height);
+        window_handle_second_screen_input(&m);
     }
 }
 

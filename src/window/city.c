@@ -30,6 +30,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/weather.h"
 #include "graphics/window.h"
@@ -91,17 +92,22 @@ static void draw_background(void)
     if (window_city_is_window_cityview()) {
         widget_city_setup_routing_preview();
     }
-    widget_sidebar_city_draw_background();
+    second_screen_draw_background(widget_sidebar_city_draw_background);
     widget_top_menu_draw(1);
 }
 
-static void draw_background_military(void)
+static void draw_sidebar_background_military(void)
 {
     if (config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR)) {
         widget_sidebar_military_draw_background();
     } else {
         widget_sidebar_city_draw_background();
     }
+}
+
+static void draw_background_military(void)
+{
+    second_screen_draw_background(draw_sidebar_background_military);
     widget_top_menu_draw(1);
 }
 
@@ -293,7 +299,7 @@ static void draw_foreground(void)
 {
     widget_top_menu_draw(0);
     window_city_draw();
-    widget_sidebar_city_draw_foreground();
+    second_screen_draw(widget_sidebar_city_draw_foreground);
     draw_speedrun_info();
     if (window_city_is_window_cityview()) {
         draw_time_left();
@@ -309,15 +315,20 @@ static void draw_foreground(void)
     }
 }
 
-static void draw_foreground_military(void)
+static void draw_sidebar_foreground_military(void)
 {
-    widget_top_menu_draw(0);
-    window_city_draw();
     if (config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR)) {
         widget_sidebar_military_draw_foreground();
     } else {
         widget_sidebar_city_draw_foreground();
     }
+}
+
+static void draw_foreground_military(void)
+{
+    widget_top_menu_draw(0);
+    window_city_draw();
+    second_screen_draw(draw_sidebar_foreground_military);
     draw_time_left();
     widget_city_draw_construction_buttons();
     if (!mouse_get()->is_touch || sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
@@ -906,11 +917,16 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (widget_top_menu_handle_input(m, h)) {
             return;
         }
-        if (widget_sidebar_city_handle_mouse(m)) {
+        if (!second_screen_is_active() && widget_sidebar_city_handle_mouse(m)) {
             return;
         }
     }
     widget_city_handle_input(m, h);
+}
+
+static int handle_sidebar_military_input(const mouse *m)
+{
+    return config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR) && widget_sidebar_military_handle_input(m);
 }
 
 static void handle_input_military(const mouse *m, const hotkeys *h)
@@ -919,16 +935,28 @@ static void handle_input_military(const mouse *m, const hotkeys *h)
     if (widget_top_menu_handle_input(m, h)) {
         return;
     }
-    if (config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR) && widget_sidebar_military_handle_input(m)) {
+    if (!second_screen_is_active() && handle_sidebar_military_input(m)) {
         return;
     }
     widget_city_handle_input_military(m, h, formation_get_selected());
 }
 
+static void handle_second_screen_input(const mouse *m)
+{
+    if (!building_construction_in_progress()) {
+        widget_sidebar_city_handle_mouse(m);
+    }
+}
+
+static void handle_second_screen_input_military(const mouse *m)
+{
+    handle_sidebar_military_input(m);
+}
+
 static void get_tooltip(tooltip_context *c)
 {
     int text_id = widget_top_menu_get_tooltip_text(c);
-    if (!text_id) {
+    if (!text_id && !second_screen_is_active()) {
         if (config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR) && formation_get_selected()) {
             text_id = widget_sidebar_military_get_tooltip_text(c);
         } else {
@@ -995,7 +1023,9 @@ void window_city_show(void)
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        handle_second_screen_input
     };
     window_show(&window);
 }
@@ -1015,7 +1045,9 @@ void window_city_military_show(int legion_formation_id)
         draw_background_military,
         draw_foreground_military,
         handle_input_military,
-        get_tooltip
+        get_tooltip,
+        0,
+        handle_second_screen_input_military
     };
     window_show(&window);
 }

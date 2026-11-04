@@ -23,6 +23,9 @@ void second_screen_set_active(int active)
     }
     data.active = active;
     data.has_content = 0;
+    if (active && city_view_is_sidebar_collapsed()) {
+        city_view_toggle_sidebar();
+    }
     city_view_set_viewport(screen_width(), screen_height());
     window_invalidate();
 }

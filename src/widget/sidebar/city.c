@@ -15,6 +15,7 @@
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "map/orientation.h"
@@ -159,6 +160,7 @@ static void draw_buttons_expanded(int x_offset)
     buttons_build_expanded[4].assetlist_name = asclepius ? "UI" : 0;
     buttons_build_expanded[4].image_name = asclepius ? "Asclepius Button" : 0;
     buttons_build_expanded[12].enabled = game_can_undo();
+    buttons_overlays_collapse_sidebar[0].enabled = !second_screen_is_active();
     image_buttons_draw(x_offset, 24, buttons_overlays_collapse_sidebar, 2);
     image_buttons_draw(x_offset, 24, buttons_build_expanded, 15);
     image_buttons_draw(x_offset, 24, buttons_top_expanded, 6);

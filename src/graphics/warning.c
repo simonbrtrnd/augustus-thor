@@ -5,8 +5,11 @@
 #include "graphics/image.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
+
+#define SIDEBAR_WIDTH 180
 
 static const int TOP_OFFSETS[] = { 30, 55, 80, 105, 130 };
 
@@ -31,7 +34,8 @@ void warning_draw(void)
         return;
     }
 
-    int center = (screen_width() - 180) / 2;
+    int sidebar_width = second_screen_is_active() ? 0 : SIDEBAR_WIDTH;
+    int center = (screen_width() - sidebar_width) / 2;
     for (int i = 0; i < 5; i++) {
         const uint8_t *text = city_warning_get(i);
         if (!text) {

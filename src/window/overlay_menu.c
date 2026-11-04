@@ -11,10 +11,12 @@
 #include "graphics/generic_button.h"
 #include "graphics/image.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
 #include "translation/translation.h"
+#include "widget/sidebar/common.h"
 #include "window/city.h"
 
 #include <stdlib.h>
@@ -323,9 +325,8 @@ static void draw_background(void)
 
 static int get_sidebar_x_offset(void)
 {
-    int view_x, view_y, view_width, view_height;
-    city_view_get_viewport(&view_x, &view_y, &view_width, &view_height);
-    return view_x + view_width;
+    return city_view_is_sidebar_collapsed() ?
+        sidebar_common_get_x_offset_collapsed() : sidebar_common_get_x_offset_expanded();
 }
 
 static int is_mouse_hovering(const overlay_menu_entry *entry)
@@ -384,10 +385,8 @@ static int draw_menu(const overlay_menu_entry *entries, int x_offset, int y_offs
     return button_index;
 }
 
-static void draw_foreground(void)
+static void draw_menus(void)
 {
-    window_city_draw();
-
     if (!data.show_menu) {
         return;
     }
@@ -490,6 +489,12 @@ static void draw_foreground(void)
     }
 }
 
+static void draw_foreground(void)
+{
+    window_city_draw();
+    second_screen_draw(draw_menus);
+}
+
 static int click_outside_menu(const mouse *m, const int x_offset)
 {
     return m->left.went_up &&
@@ -499,7 +504,18 @@ static int click_outside_menu(const mouse *m, const int x_offset)
         m->y > MENU_Y_OFFSET + MENU_CLICK_MARGIN + MENU_ITEM_HEIGHT * MAX_BUTTONS);
 }
 
-static void handle_input(const mouse *m, const hotkeys *h)
+static void close_menu(void)
+{
+    data.selected_main_overlay = 0;
+    data.selected_submenu_overlay = 0;
+    data.selected_submenu2_overlay = 0;
+    data.clicked_menu_item = NO_ITEM;
+
+    hide_menu();
+    window_city_show();
+}
+
+static void handle_menu_mouse(const mouse *m)
 {
     const int x_offset = get_sidebar_x_offset();
     int handled = 0;
@@ -514,16 +530,21 @@ static void handle_input(const mouse *m, const hotkeys *h)
     handle_hover_timeout();   // close
 
     if (!handled && click_outside_menu(m, x_offset)) {
-        data.selected_main_overlay = 0;
-        data.selected_submenu_overlay = 0;
-        data.selected_submenu2_overlay = 0;
-        data.clicked_menu_item = NO_ITEM;
-
-        hide_menu();
-        window_city_show();
+        close_menu();
     }
 
     if (!data.show_menu) {
+        show_menu();
+    }
+}
+
+static void handle_input(const mouse *m, const hotkeys *h)
+{
+    if (!second_screen_is_active()) {
+        handle_menu_mouse(m);
+    } else if (m->left.went_up || input_go_back_requested(m, h)) {
+        close_menu();
+    } else if (!data.show_menu) {
         show_menu();
     }
 }
@@ -636,7 +657,9 @@ static void button_menu_item(const generic_button *button)
 
 void window_overlay_menu_show(void)
 {
-    const window_type window = {WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input};
+    const window_type window = {
+        WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input, 0, 0, handle_menu_mouse
+    };
     data.clicked_menu_item = NO_ITEM;
     window_show(&window);
 }

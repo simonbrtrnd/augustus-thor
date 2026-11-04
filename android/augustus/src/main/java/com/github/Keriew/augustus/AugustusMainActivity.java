@@ -8,6 +8,20 @@ import org.libsdl.app.SDLActivity;
 public class AugustusMainActivity extends SDLActivity {
     private static final int GET_FOLDER_RESULT = 500;
 
+    private final BottomScreen bottomScreen = new BottomScreen();
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bottomScreen.show(this);
+    }
+
+    @Override
+    protected void onPause() {
+        bottomScreen.hide();
+        super.onPause();
+    }
+
     @Override
     public void onStop() {
         super.onStop();

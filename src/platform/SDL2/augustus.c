@@ -15,6 +15,7 @@
 #include "input/touch.h"
 #include "platform/file_manager.h"
 #include "platform/android/android.h"
+#include "platform/android/bottom_screen.h"
 #include "platform/arguments.h"
 #include "platform/cursor.h"
 #include "platform/emscripten/emscripten.h"
@@ -169,6 +170,9 @@ static void run_and_draw(void)
         game_display_fps(data.fps.last_fps);
     }
 
+#ifdef __ANDROID__
+    android_bottom_screen_present();
+#endif
     platform_renderer_render();
 }
 
@@ -413,6 +417,9 @@ static void main_loop(void)
     while (SDL_PollEvent(&event)) {
         handle_event(&event);
     }
+#ifdef __ANDROID__
+    android_bottom_screen_handle_input();
+#endif
     if (data.quit) {
 #ifdef __EMSCRIPTEN__
         emscripten_cancel_main_loop();

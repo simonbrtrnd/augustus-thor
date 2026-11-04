@@ -285,6 +285,7 @@ elseif (${TARGET_PLATFORM} STREQUAL "android")
         ${PLATFORM_FILES}
         ${PROJECT_SOURCE_DIR}/src/platform/android/android.c
         ${PROJECT_SOURCE_DIR}/src/platform/android/asset_handler.c
+        ${PROJECT_SOURCE_DIR}/src/platform/android/bottom_screen.c
         ${PROJECT_SOURCE_DIR}/src/platform/android/jni.c
         ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/android/android.c
     )

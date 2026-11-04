@@ -63,7 +63,7 @@ android {
 
     defaultConfig {
         compileSdk = 37
-        applicationId "com.github.Keriew.augustus"
+        applicationId "io.github.simonbrtrnd.augustusthor"
         minSdkVersion 23
         targetSdkVersion 37
 

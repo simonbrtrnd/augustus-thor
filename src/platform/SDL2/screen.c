@@ -369,6 +369,9 @@ void system_set_mouse_position(int *x, int *y)
     *x = calc_bound(*x, 0, screen_width() - 1);
     *y = calc_bound(*y, 0, screen_height() - 1);
     SDL_WarpMouseInWindow(SDL.window, scale_logical_to_pixels(*x), scale_logical_to_pixels(*y));
+    // Without native warping (Android), SDL fakes the warp with a motion event whose
+    // pixel round trip lands elsewhere and would drag the cursor back on the next frame
+    SDL_FlushEvent(SDL_MOUSEMOTION);
 }
 
 void system_change_window_title(const char *title)

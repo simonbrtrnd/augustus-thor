@@ -16,6 +16,7 @@
 #include "graphics/window.h"
 #include "input/input.h"
 #include "translation/translation.h"
+#include "widget/sidebar/city.h"
 #include "widget/sidebar/common.h"
 #include "window/city.h"
 
@@ -34,8 +35,10 @@
 #define HOVER_TIMEOUT_MILLIS 900
 #define NO_ITEM -1
 #define OVERLAY_MENU_END { -1, -1, JULIUS, NULL }
+#define MAX_PANEL_DEPTH 3
 
 static void button_menu_item(const generic_button *button);
+static void button_panel_item(const generic_button *button);
 
 typedef enum
 {
@@ -489,10 +492,67 @@ static void draw_menus(void)
     }
 }
 
+static struct {
+    const overlay_menu_entry *levels[MAX_PANEL_DEPTH];
+    int depth;
+    generic_button buttons[MAX_BUTTONS];
+    int num_buttons;
+    unsigned int focus_button_id;
+} panel;
+
+static int count_entries(const overlay_menu_entry *entries)
+{
+    int count = 0;
+    while (count < MAX_BUTTONS && entries[count].overlay != NO_ITEM) {
+        count++;
+    }
+    return count;
+}
+
+static void draw_panel_item_text(const uint8_t *text, int x, int y, int width)
+{
+    if (text_get_width(text, FONT_NORMAL_GREEN) <= width) {
+        text_draw_centered(text, x, y, width, FONT_NORMAL_GREEN, COLOR_MASK_NONE);
+    } else {
+        text_draw_ellipsized(text, x, y, width, FONT_NORMAL_GREEN, COLOR_MASK_NONE);
+    }
+}
+
+static void draw_panel_menu(void)
+{
+    widget_sidebar_city_draw_panel_list_frame();
+    const overlay_menu_entry *entries = panel.levels[panel.depth];
+    panel.num_buttons = count_entries(entries);
+    int expand_icon = assets_get_image_id("UI", "Expand Menu Icon");
+
+    for (int i = 0; i < panel.num_buttons; i++) {
+        int x, y, width, height;
+        widget_sidebar_city_get_panel_list_item(i, panel.num_buttons, &x, &y, &width, &height);
+        panel.buttons[i] = (generic_button) {
+            .x = (short) x,
+            .y = (short) y,
+            .width = (short) width,
+            .height = (short) height,
+            .left_click_handler = button_panel_item,
+            .parameter1 = i,
+        };
+        int is_highlighted = panel.focus_button_id == i + 1 || game_state_overlay() == entries[i].overlay;
+        widget_sidebar_city_draw_panel_list_row(x, y, width, height, is_highlighted);
+        int text_width = width - 8;
+        if (entries[i].submenu) {
+            image_draw(expand_icon, x + width - 17, y + 4, COLOR_MASK_NONE, SCALE_NONE);
+            text_width -= 13;
+        }
+        draw_panel_item_text(get_overlay_text(&entries[i]), x + 4, y + 7, text_width);
+    }
+}
+
 static void draw_foreground(void)
 {
     window_city_draw();
-    second_screen_draw(draw_menus);
+    if (!second_screen_draw(draw_panel_menu)) {
+        draw_menus();
+    }
 }
 
 static int click_outside_menu(const mouse *m, const int x_offset)
@@ -535,6 +595,23 @@ static void handle_menu_mouse(const mouse *m)
 
     if (!data.show_menu) {
         show_menu();
+    }
+}
+
+static void handle_panel_mouse(const mouse *m)
+{
+    if (widget_sidebar_city_panel_list_back_clicked(m)) {
+        if (panel.depth > 0) {
+            panel.depth--;
+            panel.focus_button_id = 0;
+        } else {
+            close_menu();
+        }
+        return;
+    }
+    int handled = generic_buttons_handle_mouse(m, 0, 0, panel.buttons, panel.num_buttons, &panel.focus_button_id);
+    if (!handled && m->left.went_up && !widget_sidebar_city_is_in_panel_list(m)) {
+        close_menu();
     }
 }
 
@@ -655,12 +732,29 @@ static void button_menu_item(const generic_button *button)
     window_city_show();
 }
 
+static void button_panel_item(const generic_button *button)
+{
+    const overlay_menu_entry *entry = &panel.levels[panel.depth][button->parameter1];
+    int has_submenu = entry->submenu && entry->submenu[0].overlay != NO_ITEM;
+    if (has_submenu && panel.depth < MAX_PANEL_DEPTH - 1) {
+        panel.levels[++panel.depth] = entry->submenu;
+        panel.focus_button_id = 0;
+        return;
+    }
+    data.selected_overlay_id = entry->overlay;
+    game_state_set_overlay(entry->overlay);
+    close_menu();
+}
+
 void window_overlay_menu_show(void)
 {
     const window_type window = {
-        WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input, 0, 0, handle_menu_mouse
+        WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input, 0, 0, handle_panel_mouse
     };
     data.clicked_menu_item = NO_ITEM;
+    panel.levels[0] = overlay_menu;
+    panel.depth = 0;
+    panel.focus_button_id = 0;
     window_show(&window);
 }
 

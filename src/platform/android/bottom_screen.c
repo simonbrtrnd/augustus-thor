@@ -3,9 +3,7 @@
 #ifdef __ANDROID__
 
 #include "graphics/color.h"
-#include "graphics/menu.h"
 #include "graphics/renderer.h"
-#include "graphics/screen.h"
 #include "graphics/second_screen.h"
 #include "graphics/window.h"
 #include "input/mouse.h"
@@ -17,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PIXEL_SCALE 2
+#define PIXEL_SCALE 4
 #define MAX_PENDING_TOUCHES 32
 #define WINDOW_BLACK 0xff000000
 
@@ -28,18 +26,17 @@ enum {
     MOTION_ACTION_CANCEL = 3
 };
 
+typedef enum {
+    SHOWING_NOTHING,
+    SHOWING_BLACK,
+    SHOWING_CANVAS
+} window_content;
+
 typedef struct {
     int action;
     float x;
     float y;
 } touch_event;
-
-typedef struct {
-    int x;
-    int y;
-    int width;
-    int height;
-} area;
 
 static struct {
     pthread_mutex_t lock;
@@ -48,76 +45,110 @@ static struct {
     int height;
     touch_event pending[MAX_PENDING_TOUCHES];
     int pending_count;
-    color_t *pixels;
-    int pixels_size;
+    color_t *canvas;
+    color_t *shown_canvas;
+    int canvas_size;
+    int *source_columns;
+    int source_columns_size;
+    window_content shown;
 } data = { .lock = PTHREAD_MUTEX_INITIALIZER };
-
-static int min(int a, int b)
-{
-    return a < b ? a : b;
-}
-
-static area get_screen_area(int width, int height)
-{
-    int area_width = min(width, screen_width());
-    int area_height = min(height, screen_height() - TOP_MENU_HEIGHT);
-    area screen_area = { screen_width() - area_width, TOP_MENU_HEIGHT, area_width, area_height };
-    return screen_area;
-}
-
-static area get_window_area(int width, int height)
-{
-    area screen_area = get_screen_area(width, height);
-    area window_area = {
-        width - screen_area.width, (height - screen_area.height) / 2, screen_area.width, screen_area.height
-    };
-    return window_area;
-}
 
 static uint32_t to_window_pixel(color_t color)
 {
     return (color & 0xff00ff00) | ((color & 0xff) << 16) | ((color >> 16) & 0xff);
 }
 
-static int read_second_screen(area screen_area)
+static int reserve_canvas(int size)
 {
-    const graphics_renderer_interface *renderer = graphics_renderer();
-    if (!second_screen_has_content() || !renderer->save_second_screen_buffer) {
+    if (size <= data.canvas_size) {
+        return 1;
+    }
+    color_t *canvas = realloc(data.canvas, size * sizeof(color_t));
+    if (canvas) {
+        data.canvas = canvas;
+    }
+    color_t *shown_canvas = realloc(data.shown_canvas, size * sizeof(color_t));
+    if (shown_canvas) {
+        data.shown_canvas = shown_canvas;
+    }
+    if (!canvas || !shown_canvas) {
         return 0;
     }
-    int size = screen_area.width * screen_area.height;
-    if (size > data.pixels_size) {
-        color_t *pixels = realloc(data.pixels, size * sizeof(color_t));
-        if (!pixels) {
+    data.canvas_size = size;
+    return 1;
+}
+
+static int read_canvas(void)
+{
+    const graphics_renderer_interface *renderer = graphics_renderer();
+    return second_screen_has_content() && renderer->save_second_screen_buffer &&
+        reserve_canvas(data.width * data.height) &&
+        renderer->save_second_screen_buffer(data.canvas, 0, 0, data.width, data.height, data.width);
+}
+
+static int is_canvas_shown(void)
+{
+    return data.shown == SHOWING_CANVAS &&
+        memcmp(data.canvas, data.shown_canvas, data.width * data.height * sizeof(color_t)) == 0;
+}
+
+static const int *get_source_columns(int window_width)
+{
+    if (window_width > data.source_columns_size) {
+        int *columns = realloc(data.source_columns, window_width * sizeof(int));
+        if (!columns) {
             return 0;
         }
-        data.pixels = pixels;
-        data.pixels_size = size;
+        data.source_columns = columns;
+        data.source_columns_size = window_width;
     }
-    return renderer->save_second_screen_buffer(data.pixels, screen_area.x, screen_area.y,
-        screen_area.width, screen_area.height, screen_area.width);
+    for (int x = 0; x < window_width; x++) {
+        data.source_columns[x] = x * data.width / window_width;
+    }
+    return data.source_columns;
+}
+
+static void scale_canvas(const ANativeWindow_Buffer *buffer)
+{
+    const int *columns = get_source_columns(buffer->width);
+    if (!columns) {
+        return;
+    }
+    uint32_t *bits = buffer->bits;
+    for (int y = 0; y < buffer->height; y++) {
+        uint32_t *row = &bits[y * buffer->stride];
+        const color_t *source = &data.canvas[y * data.height / buffer->height * data.width];
+        for (int x = 0; x < buffer->width; x++) {
+            row[x] = to_window_pixel(source[columns[x]]);
+        }
+    }
+}
+
+static void fill_black(const ANativeWindow_Buffer *buffer)
+{
+    uint32_t *bits = buffer->bits;
+    for (int i = 0; i < buffer->stride * buffer->height; i++) {
+        bits[i] = WINDOW_BLACK;
+    }
 }
 
 static void draw_window(void)
 {
+    int has_canvas = read_canvas();
+    if (has_canvas ? is_canvas_shown() : data.shown == SHOWING_BLACK) {
+        return;
+    }
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(data.window, &buffer, 0) != 0) {
         return;
     }
-    uint32_t *bits = buffer.bits;
-    for (int i = 0; i < buffer.stride * buffer.height; i++) {
-        bits[i] = WINDOW_BLACK;
-    }
-    area screen_area = get_screen_area(buffer.width, buffer.height);
-    if (read_second_screen(screen_area)) {
-        area window_area = get_window_area(buffer.width, buffer.height);
-        for (int y = 0; y < window_area.height; y++) {
-            uint32_t *row = &bits[(window_area.y + y) * buffer.stride + window_area.x];
-            const color_t *pixels = &data.pixels[y * window_area.width];
-            for (int x = 0; x < window_area.width; x++) {
-                row[x] = to_window_pixel(pixels[x]);
-            }
-        }
+    if (has_canvas) {
+        scale_canvas(&buffer);
+        memcpy(data.shown_canvas, data.canvas, data.width * data.height * sizeof(color_t));
+        data.shown = SHOWING_CANVAS;
+    } else {
+        fill_black(&buffer);
+        data.shown = SHOWING_BLACK;
     }
     ANativeWindow_unlockAndPost(data.window);
 }
@@ -133,11 +164,9 @@ void android_bottom_screen_present(void)
 
 static mouse to_screen_mouse(const touch_event *event, int width, int height)
 {
-    area screen_area = get_screen_area(width, height);
-    area window_area = get_window_area(width, height);
     mouse m = { 0 };
-    m.x = screen_area.x + (int) (event->x * width) - window_area.x;
-    m.y = screen_area.y + (int) (event->y * height) - window_area.y;
+    m.x = (int) (event->x * width);
+    m.y = (int) (event->y * height);
     m.is_inside_window = 1;
     m.window_has_focus = 1;
     m.is_touch = 1;
@@ -171,7 +200,7 @@ void android_bottom_screen_handle_input(void)
     int has_window = data.window != 0;
     pthread_mutex_unlock(&data.lock);
 
-    second_screen_set_active(has_window);
+    second_screen_set_size(has_window ? width : 0, has_window ? height : 0);
     for (int i = 0; i < count; i++) {
         mouse m = to_screen_mouse(&events[i], width, height);
         window_handle_second_screen_input(&m);
@@ -182,10 +211,8 @@ JNIEXPORT void JNICALL Java_com_github_Keriew_augustus_BottomScreen_nativeSetSur
     JNIEnv *env, jclass cls, jobject surface, jint surface_width, jint surface_height)
 {
     ANativeWindow *window = surface ? ANativeWindow_fromSurface(env, surface) : 0;
-    int width = surface_width / PIXEL_SCALE;
-    int height = surface_height / PIXEL_SCALE;
     if (window) {
-        ANativeWindow_setBuffersGeometry(window, width, height, WINDOW_FORMAT_RGBA_8888);
+        ANativeWindow_setBuffersGeometry(window, surface_width, surface_height, WINDOW_FORMAT_RGBA_8888);
     }
 
     pthread_mutex_lock(&data.lock);
@@ -193,9 +220,10 @@ JNIEXPORT void JNICALL Java_com_github_Keriew_augustus_BottomScreen_nativeSetSur
         ANativeWindow_release(data.window);
     }
     data.window = window;
-    data.width = width;
-    data.height = height;
+    data.width = (int) (surface_width / PIXEL_SCALE);
+    data.height = (int) (surface_height / PIXEL_SCALE);
     data.pending_count = 0;
+    data.shown = SHOWING_NOTHING;
     pthread_mutex_unlock(&data.lock);
 }
 

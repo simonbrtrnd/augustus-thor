@@ -7,25 +7,34 @@
 #include "graphics/window.h"
 
 static struct {
-    int active;
+    int width;
+    int height;
     int has_content;
 } data;
 
 int second_screen_is_active(void)
 {
-    return data.active;
+    return data.width > 0 && data.height > 0;
 }
 
-void second_screen_set_active(int active)
+int second_screen_width(void)
 {
-    if (data.active == active) {
+    return data.width;
+}
+
+int second_screen_height(void)
+{
+    return data.height;
+}
+
+void second_screen_set_size(int width, int height)
+{
+    if (data.width == width && data.height == height) {
         return;
     }
-    data.active = active;
+    data.width = width;
+    data.height = height;
     data.has_content = 0;
-    if (active && city_view_is_sidebar_collapsed()) {
-        city_view_toggle_sidebar();
-    }
     city_view_set_viewport(screen_width(), screen_height());
     window_invalidate();
 }
@@ -33,29 +42,30 @@ void second_screen_set_active(int active)
 static int begin_drawing(void)
 {
     const graphics_renderer_interface *renderer = graphics_renderer();
-    return data.active && renderer->begin_second_screen_drawing && renderer->begin_second_screen_drawing();
+    return second_screen_is_active() && renderer->begin_second_screen_drawing &&
+        renderer->begin_second_screen_drawing(data.width, data.height);
 }
 
-void second_screen_draw(void (*draw)(void))
+int second_screen_draw(void (*draw)(void))
 {
     if (!begin_drawing()) {
-        draw();
-        return;
+        return 0;
     }
     draw();
     graphics_renderer()->end_second_screen_drawing();
+    return 1;
 }
 
-void second_screen_draw_background(void (*draw)(void))
+int second_screen_draw_background(void (*draw)(void))
 {
     if (!begin_drawing()) {
-        draw();
-        return;
+        return 0;
     }
     graphics_clear_screen();
     draw();
     graphics_renderer()->end_second_screen_drawing();
     data.has_content = 1;
+    return 1;
 }
 
 void second_screen_reset_content(void)

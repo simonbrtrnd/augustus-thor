@@ -3,26 +3,32 @@
 
 /**
  * A second physical screen, such as the touch screen of the AYN Thor. While it is active,
- * the sidebar and the build menu are drawn for it, and the main screen shows the city alone.
+ * it shows a panel with the sidebar controls and the main screen shows the city alone.
+ * The second screen has its own size and coordinates, in game pixels.
  */
 
 int second_screen_is_active(void);
 
-/**
- * Called by the platform when the second screen appears or disappears.
- */
-void second_screen_set_active(int active);
+int second_screen_width(void);
+
+int second_screen_height(void);
 
 /**
- * Runs the draw function on the second screen when it is active, on the main screen otherwise.
+ * Called by the platform with the size of the second screen in game pixels, or 0 when it is gone.
  */
-void second_screen_draw(void (*draw)(void));
+void second_screen_set_size(int width, int height);
+
+/**
+ * Runs the draw function on the second screen.
+ * Returns 0 without drawing when the second screen is not active.
+ */
+int second_screen_draw(void (*draw)(void));
 
 /**
  * Same as second_screen_draw, but clears the second screen first.
  * Use it for the drawing that gives the second screen its content.
  */
-void second_screen_draw_background(void (*draw)(void));
+int second_screen_draw_background(void (*draw)(void));
 
 /**
  * Marks the second screen as empty until a window draws on it again.

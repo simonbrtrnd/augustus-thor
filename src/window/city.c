@@ -92,7 +92,9 @@ static void draw_background(void)
     if (window_city_is_window_cityview()) {
         widget_city_setup_routing_preview();
     }
-    second_screen_draw_background(widget_sidebar_city_draw_background);
+    if (!second_screen_draw_background(widget_sidebar_city_draw_panel_background)) {
+        widget_sidebar_city_draw_background();
+    }
     widget_top_menu_draw(1);
 }
 
@@ -107,7 +109,9 @@ static void draw_sidebar_background_military(void)
 
 static void draw_background_military(void)
 {
-    second_screen_draw_background(draw_sidebar_background_military);
+    if (!second_screen_draw_background(widget_sidebar_city_draw_panel_background)) {
+        draw_sidebar_background_military();
+    }
     widget_top_menu_draw(1);
 }
 
@@ -299,7 +303,9 @@ static void draw_foreground(void)
 {
     widget_top_menu_draw(0);
     window_city_draw();
-    second_screen_draw(widget_sidebar_city_draw_foreground);
+    if (!second_screen_draw(widget_sidebar_city_draw_panel)) {
+        widget_sidebar_city_draw_foreground();
+    }
     draw_speedrun_info();
     if (window_city_is_window_cityview()) {
         draw_time_left();
@@ -328,7 +334,9 @@ static void draw_foreground_military(void)
 {
     widget_top_menu_draw(0);
     window_city_draw();
-    second_screen_draw(draw_sidebar_foreground_military);
+    if (!second_screen_draw(widget_sidebar_city_draw_panel)) {
+        draw_sidebar_foreground_military();
+    }
     draw_time_left();
     widget_city_draw_construction_buttons();
     if (!mouse_get()->is_touch || sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED)) {
@@ -944,13 +952,8 @@ static void handle_input_military(const mouse *m, const hotkeys *h)
 static void handle_second_screen_input(const mouse *m)
 {
     if (!building_construction_in_progress()) {
-        widget_sidebar_city_handle_mouse(m);
+        widget_sidebar_city_handle_panel_mouse(m);
     }
-}
-
-static void handle_second_screen_input_military(const mouse *m)
-{
-    handle_sidebar_military_input(m);
 }
 
 static void get_tooltip(tooltip_context *c)
@@ -1047,7 +1050,7 @@ void window_city_military_show(int legion_formation_id)
         handle_input_military,
         get_tooltip,
         0,
-        handle_second_screen_input_military
+        handle_second_screen_input
     };
     window_show(&window);
 }

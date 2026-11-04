@@ -44,11 +44,15 @@
 #define MENU_ITEM_MONEY_OFFSET 88
 
 #define TOOLTIP_TEXT_LENGTH 1000
+#define MAX_PANEL_ITEMS 30
+#define PANEL_TEXT_MARGIN 6
 
 static uint8_t tooltip_text[TOOLTIP_TEXT_LENGTH];
 
 static void button_menu_index(const generic_button *button);
 static void button_menu_item(int item);
+
+static generic_button panel_buttons[MAX_PANEL_ITEMS];
 
 static generic_button build_menu_buttons[] = {
     {0, 0, 290, 20, button_menu_index, 0, 1},
@@ -231,6 +235,30 @@ static void draw_resource_icon_scaled(int image_id, int x, int y)
     image_draw(image_id, img_x * scale, img_y * scale, COLOR_MASK_NONE, scale);
 }
 
+static const uint8_t *get_menu_item_name(building_type type)
+{
+    switch (type) {
+        case BUILDING_BRICKWORKS:
+            return translation_for(TR_RESOURCE_BRICKS);
+        case BUILDING_CONCRETE_MAKER:
+            return translation_for(TR_RESOURCE_CONCRETE);
+        default:
+            return lang_get_string(28, type);
+    }
+}
+
+static int get_menu_item_cost(building_type type)
+{
+    if (type == BUILDING_DRAGGABLE_RESERVOIR) {
+        type = BUILDING_RESERVOIR;
+    }
+    int cost = model_get_building(type)->cost;
+    if (type == BUILDING_HIGHWAY && city_buildings_has_working_highway_station()) {
+        cost /= 2;
+    }
+    return cost;
+}
+
 static void draw_menu_buttons(void)
 {
     int x_offset = get_sidebar_x_offset();
@@ -274,17 +302,7 @@ static void draw_menu_buttons(void)
             text_offset += MENU_RESOURCE_ICON_SIZE + 4; // Shift text right to make room for icon + padding
         }
 
-        const uint8_t *menu_name = lang_get_string(28, type);
-        switch (type) {
-            case BUILDING_BRICKWORKS:
-                menu_name = translation_for(TR_RESOURCE_BRICKS);
-                break;
-            case BUILDING_CONCRETE_MAKER:
-                menu_name = translation_for(TR_RESOURCE_CONCRETE);
-                break;
-            default:
-                break;
-        }
+        const uint8_t *menu_name = get_menu_item_name(type);
 
         if (menu_index > 0) {
             text_draw_build_menu_with_index(menu_name, menu_index % 10, item_x_align + MENU_TEXT_X_OFFSET,
@@ -294,14 +312,9 @@ static void draw_menu_buttons(void)
                 MENU_ITEM_WIDTH - (text_offset - MENU_TEXT_X_OFFSET), FONT_NORMAL_GREEN, 0);
         }
 
+        int cost = get_menu_item_cost(type);
         if (type == BUILDING_DRAGGABLE_RESERVOIR) {
             type = BUILDING_RESERVOIR;
-        }
-        int cost = model_get_building(type)->cost;
-        if (type == BUILDING_HIGHWAY) {
-            if (city_buildings_has_working_highway_station()) {
-                cost /= 2;
-            }
         }
         if (cost) {
             text_draw_money(cost, x_offset - MENU_ITEM_MONEY_OFFSET,
@@ -330,11 +343,60 @@ static void draw_menu_buttons(void)
     }
 }
 
+static void draw_panel_item_value(building_type type, int x, int y, int width, int *text_width)
+{
+    if (is_auto_cycle_button(type)) {
+        int state_text = 5 - building_construction_is_auto_cycling(selected_auto_cycle_group());
+        int state_width = lang_text_get_width(18, state_text, FONT_NORMAL_GREEN);
+        lang_text_draw(18, state_text, x + width - PANEL_TEXT_MARGIN - state_width, y, FONT_NORMAL_GREEN);
+        *text_width -= state_width + PANEL_TEXT_MARGIN;
+        return;
+    }
+    int cost = get_menu_item_cost(type);
+    if (cost) {
+        int cost_width = text_get_number_width(cost, '@', "", FONT_NORMAL_GREEN);
+        text_draw_number(cost, '@', "", x + width - PANEL_TEXT_MARGIN - cost_width, y, FONT_NORMAL_GREEN, 0);
+        *text_width -= cost_width + PANEL_TEXT_MARGIN;
+    } else {
+        image_draw(assets_get_image_id("UI", "Expand Menu Icon"), x + width - 17, y - 3, COLOR_MASK_NONE, SCALE_NONE);
+        *text_width -= 17;
+    }
+}
+
+static void draw_panel_menu(void)
+{
+    widget_sidebar_city_draw_panel_list_frame();
+    int item_index = -1;
+    for (unsigned int i = 0; i < data.num_items && i < MAX_PANEL_ITEMS; i++) {
+        item_index = building_menu_next_index(data.selected_submenu, item_index);
+        building_type type = building_menu_type(data.selected_submenu, item_index);
+        int x, y, width, height;
+        widget_sidebar_city_get_panel_list_item(i, data.num_items, &x, &y, &width, &height);
+        panel_buttons[i] = (generic_button) {
+            .x = (short) x,
+            .y = (short) y,
+            .width = (short) width,
+            .height = (short) height,
+            .left_click_handler = button_menu_index,
+            .parameter1 = i + 1,
+        };
+        widget_sidebar_city_draw_panel_list_row(x, y, width, height, data.focus_button_id == i + 1);
+        int text_y = y + 7;
+        int text_width = width - 2 * PANEL_TEXT_MARGIN;
+        draw_panel_item_value(type, x, text_y, width, &text_width);
+        const uint8_t *name = is_auto_cycle_button(type) ? translation_for(TR_AUTO_CYCLE_TEMPLES) :
+            get_menu_item_name(type);
+        text_draw_ellipsized(name, x + PANEL_TEXT_MARGIN, text_y, text_width, FONT_NORMAL_GREEN, 0);
+    }
+}
+
 static void draw_foreground(void)
 {
     window_city_draw();
     window_city_draw_custom_variables_text_display();
-    second_screen_draw(draw_menu_buttons);
+    if (!second_screen_draw(draw_panel_menu)) {
+        draw_menu_buttons();
+    }
 }
 
 static int click_outside_menu(const mouse *m, int x_offset)
@@ -392,7 +454,13 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
 static void handle_second_screen_input(const mouse *m)
 {
-    if (!handle_menu_mouse(m) && click_outside_menu(m, get_sidebar_x_offset())) {
+    if (widget_sidebar_city_panel_list_back_clicked(m)) {
+        window_build_menu_hide();
+        return;
+    }
+    unsigned int num_buttons = data.num_items < MAX_PANEL_ITEMS ? data.num_items : MAX_PANEL_ITEMS;
+    int handled = generic_buttons_handle_mouse(m, 0, 0, panel_buttons, num_buttons, &data.focus_button_id);
+    if (!handled && m->left.went_up && !widget_sidebar_city_is_in_panel_list(m)) {
         window_build_menu_hide();
     }
 }

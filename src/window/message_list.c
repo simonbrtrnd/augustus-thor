@@ -14,6 +14,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/scrollbar.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -25,6 +26,7 @@
 #include "window/mission_briefing.h"
 
 #define MAX_MESSAGES 10
+#define PANEL_TOP 32
 
 typedef enum {
     ALL_MESSAGES_SHOWN,
@@ -169,19 +171,28 @@ static void init(void)
     scrollbar_init(&scrollbar, city_message_scroll_position(), data.message_count);
 }
 
+static void enter_dialog(void)
+{
+    if (second_screen_is_active()) {
+        graphics_in_dialog_with_size(BLOCK_SIZE * data.width_blocks, BLOCK_SIZE * data.height_blocks + 2 * PANEL_TOP);
+    } else {
+        graphics_in_dialog();
+    }
+}
+
 static void draw_background(void)
 {
     window_city_draw_all();
 
-    graphics_in_dialog();
     data.width_blocks = 30;
     data.height_blocks = 22;
     data.x_text = 16;
     data.y_text = 112;
     data.text_width_blocks = data.width_blocks - 4;
     data.text_height_blocks = data.height_blocks - 9;
+    enter_dialog();
 
-    outer_panel_draw(0, 32, data.width_blocks, data.height_blocks);
+    outer_panel_draw(0, PANEL_TOP, data.width_blocks, data.height_blocks);
     lang_text_draw_centered(63, 0, 0, 48, BLOCK_SIZE * data.width_blocks, FONT_LARGE_BLACK);
     inner_panel_draw(data.x_text, data.y_text, data.text_width_blocks, data.text_height_blocks);
 
@@ -250,7 +261,7 @@ static void draw_messages(unsigned int total_messages)
 
 static void draw_foreground(void)
 {
-    graphics_in_dialog();
+    enter_dialog();
 
     image_buttons_draw(16, 32 + BLOCK_SIZE * data.height_blocks - 42, &image_button_help, 1);
     image_buttons_draw(BLOCK_SIZE * data.width_blocks - 38, 32 + BLOCK_SIZE * data.height_blocks - 42,

@@ -19,6 +19,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/rich_text.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/video.h"
 #include "graphics/window.h"
@@ -35,6 +36,10 @@
 #include "window/city.h"
 #include "window/editor/map.h"
 
+#define DIALOG_WIDTH 640
+#define DIALOG_HEIGHT 480
+#define VIDEO_MESSAGE_WIDTH_BLOCKS 26
+#define VIDEO_MESSAGE_HEIGHT_BLOCKS 28
 #define MAX_HISTORY 200
 #define POPUP_PROTECTION_MILIS 400
 
@@ -582,11 +587,21 @@ static void draw_content(const lang_message *msg)
     }
 }
 
+static void set_message_position(int x, int y, int width_blocks, int height_blocks)
+{
+    if (second_screen_is_active()) {
+        data.x = (DIALOG_WIDTH - BLOCK_SIZE * width_blocks) / 2;
+        data.y = (DIALOG_HEIGHT - BLOCK_SIZE * height_blocks) / 2;
+    } else {
+        data.x = x;
+        data.y = y;
+    }
+}
+
 static void draw_background_normal(void)
 {
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
-    data.x = msg->x;
-    data.y = msg->y;
+    set_message_position(msg->x, msg->y, msg->width_blocks, msg->height_blocks);
     data.x_text = data.x + 16;
     outer_panel_draw(data.x, data.y, msg->width_blocks, msg->height_blocks);
 
@@ -604,8 +619,7 @@ static void draw_background_normal(void)
 static void draw_background_video(void)
 {
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
-    data.x = 32;
-    data.y = 28;
+    set_message_position(32, 28, VIDEO_MESSAGE_WIDTH_BLOCKS, VIDEO_MESSAGE_HEIGHT_BLOCKS);
 
     int small_font = 0;
     int lines_required = 0;
@@ -624,7 +638,7 @@ static void draw_background_video(void)
         }
     }
 
-    outer_panel_draw(data.x, data.y, 26, 28);
+    outer_panel_draw(data.x, data.y, VIDEO_MESSAGE_WIDTH_BLOCKS, VIDEO_MESSAGE_HEIGHT_BLOCKS);
     graphics_fill_rect(data.x + 7, data.y + 7, 402, 294, COLOR_BLACK);
 
     int y_base = data.y + 308;

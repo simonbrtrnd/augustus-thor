@@ -14,9 +14,11 @@ int second_screen_width(void);
 int second_screen_height(void);
 
 /**
- * Called by the platform with the size of the second screen in game pixels, or 0 when it is gone.
+ * Called by the platform with the size of the second screen in game pixels, or 0 when it is gone,
+ * and the number of screen pixels per game pixel.
+ * The second screen is drawn at screen resolution, so images can be drawn at fractional game scales.
  */
-void second_screen_set_size(int width, int height);
+void second_screen_set_size(int width, int height, int pixel_scale);
 
 /**
  * Runs the draw function on the second screen.

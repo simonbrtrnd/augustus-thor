@@ -9,6 +9,7 @@
 static struct {
     int width;
     int height;
+    int pixel_scale;
     int has_content;
 } data;
 
@@ -27,13 +28,14 @@ int second_screen_height(void)
     return data.height;
 }
 
-void second_screen_set_size(int width, int height)
+void second_screen_set_size(int width, int height, int pixel_scale)
 {
-    if (data.width == width && data.height == height) {
+    if (data.width == width && data.height == height && data.pixel_scale == pixel_scale) {
         return;
     }
     data.width = width;
     data.height = height;
+    data.pixel_scale = pixel_scale;
     data.has_content = 0;
     city_view_set_viewport(screen_width(), screen_height());
     window_invalidate();
@@ -43,7 +45,7 @@ static int begin_drawing(void)
 {
     const graphics_renderer_interface *renderer = graphics_renderer();
     return second_screen_is_active() && renderer->begin_second_screen_drawing &&
-        renderer->begin_second_screen_drawing(data.width, data.height);
+        renderer->begin_second_screen_drawing(data.width, data.height, data.pixel_scale);
 }
 
 int second_screen_draw(void (*draw)(void))

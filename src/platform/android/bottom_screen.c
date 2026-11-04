@@ -78,18 +78,29 @@ static int reserve_canvas(int size)
     return 1;
 }
 
+static int get_canvas_width(void)
+{
+    return data.width * PIXEL_SCALE;
+}
+
+static int get_canvas_height(void)
+{
+    return data.height * PIXEL_SCALE;
+}
+
 static int read_canvas(void)
 {
     const graphics_renderer_interface *renderer = graphics_renderer();
-    return second_screen_has_content() && renderer->save_second_screen_buffer &&
-        reserve_canvas(data.width * data.height) &&
-        renderer->save_second_screen_buffer(data.canvas, 0, 0, data.width, data.height, data.width);
+    int width = get_canvas_width();
+    int height = get_canvas_height();
+    return second_screen_has_content() && renderer->save_second_screen_buffer && reserve_canvas(width * height) &&
+        renderer->save_second_screen_buffer(data.canvas, 0, 0, width, height, width);
 }
 
 static int is_canvas_shown(void)
 {
     return data.shown == SHOWING_CANVAS &&
-        memcmp(data.canvas, data.shown_canvas, data.width * data.height * sizeof(color_t)) == 0;
+        memcmp(data.canvas, data.shown_canvas, get_canvas_width() * get_canvas_height() * sizeof(color_t)) == 0;
 }
 
 static const int *get_source_columns(int window_width)
@@ -103,7 +114,7 @@ static const int *get_source_columns(int window_width)
         data.source_columns_size = window_width;
     }
     for (int x = 0; x < window_width; x++) {
-        data.source_columns[x] = x * data.width / window_width;
+        data.source_columns[x] = x * get_canvas_width() / window_width;
     }
     return data.source_columns;
 }
@@ -117,7 +128,7 @@ static void scale_canvas(const ANativeWindow_Buffer *buffer)
     uint32_t *bits = buffer->bits;
     for (int y = 0; y < buffer->height; y++) {
         uint32_t *row = &bits[y * buffer->stride];
-        const color_t *source = &data.canvas[y * data.height / buffer->height * data.width];
+        const color_t *source = &data.canvas[y * get_canvas_height() / buffer->height * get_canvas_width()];
         for (int x = 0; x < buffer->width; x++) {
             row[x] = to_window_pixel(source[columns[x]]);
         }
@@ -144,7 +155,7 @@ static void draw_window(void)
     }
     if (has_canvas) {
         scale_canvas(&buffer);
-        memcpy(data.shown_canvas, data.canvas, data.width * data.height * sizeof(color_t));
+        memcpy(data.shown_canvas, data.canvas, get_canvas_width() * get_canvas_height() * sizeof(color_t));
         data.shown = SHOWING_CANVAS;
     } else {
         fill_black(&buffer);
@@ -200,7 +211,7 @@ void android_bottom_screen_handle_input(void)
     int has_window = data.window != 0;
     pthread_mutex_unlock(&data.lock);
 
-    second_screen_set_size(has_window ? width : 0, has_window ? height : 0);
+    second_screen_set_size(has_window ? width : 0, has_window ? height : 0, PIXEL_SCALE);
     for (int i = 0; i < count; i++) {
         mouse m = to_screen_mouse(&events[i], width, height);
         window_handle_second_screen_input(&m);

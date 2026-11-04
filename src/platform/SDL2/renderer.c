@@ -75,6 +75,7 @@ static struct {
     SDL_Renderer *renderer;
     SDL_Texture *render_texture;
     SDL_Texture *second_screen_texture;
+    int is_drawing_second_screen;
     int is_software_renderer;
     int paused;
     struct {
@@ -140,27 +141,36 @@ static int has_texture_size(SDL_Texture *texture, int width, int height)
     return texture_width == width && texture_height == height;
 }
 
-static int begin_second_screen_drawing(int width, int height)
+static int begin_second_screen_drawing(int width, int height, int pixel_scale)
 {
     if (data.paused || !data.render_texture) {
         return 0;
     }
-    if (data.second_screen_texture && !has_texture_size(data.second_screen_texture, width, height)) {
+    int texture_width = width * pixel_scale;
+    int texture_height = height * pixel_scale;
+    if (data.second_screen_texture &&
+        !has_texture_size(data.second_screen_texture, texture_width, texture_height)) {
         SDL_DestroyTexture(data.second_screen_texture);
         data.second_screen_texture = 0;
     }
     if (!data.second_screen_texture) {
         data.second_screen_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ABGR8888,
-            SDL_TEXTUREACCESS_TARGET, width, height);
+            SDL_TEXTUREACCESS_TARGET, texture_width, texture_height);
         if (!data.second_screen_texture) {
             return 0;
         }
     }
-    return SDL_SetRenderTarget(data.renderer, data.second_screen_texture) == 0;
+    if (SDL_SetRenderTarget(data.renderer, data.second_screen_texture) != 0) {
+        return 0;
+    }
+    SDL_RenderSetScale(data.renderer, (float) pixel_scale, (float) pixel_scale);
+    data.is_drawing_second_screen = 1;
+    return 1;
 }
 
 static void end_second_screen_drawing(void)
 {
+    data.is_drawing_second_screen = 0;
     SDL_SetRenderTarget(data.renderer, data.render_texture);
 }
 
@@ -540,7 +550,7 @@ static void set_texture_color_and_scale_mode(SDL_Texture *texture, color_t color
     SDL_ScaleMode city_scale_mode = SDL_ScaleModeNearest;
     SDL_ScaleMode texture_scale_mode = scale != 1.0f ? SDL_ScaleModeLinear : SDL_ScaleModeNearest;
     SDL_ScaleMode desired_scale_mode = data.city_scale == scale ? city_scale_mode : texture_scale_mode;
-    if (data.disable_linear_filter) {
+    if (data.disable_linear_filter || data.is_drawing_second_screen) {
         desired_scale_mode = SDL_ScaleModeNearest;
     }
     if (current_scale_mode != desired_scale_mode) {

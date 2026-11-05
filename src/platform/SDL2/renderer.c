@@ -171,16 +171,18 @@ static void end_second_screen_drawing(void)
     SDL_SetRenderTarget(data.renderer, data.render_texture);
 }
 
-static int save_second_screen_buffer(color_t *pixels, int x, int y, int width, int height, int row_width)
+static int read_second_screen_pixels(uint32_t *rgba_pixels, int width, int height)
 {
     if (data.paused || !data.second_screen_texture) {
         return 0;
     }
     SDL_Texture *former_target = SDL_GetRenderTarget(data.renderer);
     SDL_SetRenderTarget(data.renderer, data.second_screen_texture);
-    int saved = save_screen_buffer(pixels, x, y, width, height, row_width);
+    SDL_Rect rect = { 0, 0, width, height };
+    int read = SDL_RenderReadPixels(data.renderer, &rect, SDL_PIXELFORMAT_ABGR8888, rgba_pixels,
+        width * sizeof(uint32_t)) == 0;
     SDL_SetRenderTarget(data.renderer, former_target);
-    return saved;
+    return read;
 }
 
 static void draw_line(int x_start, int x_end, int y_start, int y_end, color_t color)
@@ -1237,7 +1239,7 @@ static void create_renderer_interface(void)
     data.renderer_interface.update_scale = update_scale;
     data.renderer_interface.begin_second_screen_drawing = begin_second_screen_drawing;
     data.renderer_interface.end_second_screen_drawing = end_second_screen_drawing;
-    data.renderer_interface.save_second_screen_buffer = save_second_screen_buffer;
+    data.renderer_interface.read_second_screen_pixels = read_second_screen_pixels;
 
     graphics_renderer_set_interface(&data.renderer_interface);
 }

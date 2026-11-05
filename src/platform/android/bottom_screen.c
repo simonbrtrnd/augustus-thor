@@ -2,11 +2,11 @@
 
 #ifdef __ANDROID__
 
-#include "graphics/color.h"
 #include "graphics/renderer.h"
 #include "graphics/second_screen.h"
 #include "input/mouse.h"
 
+#include <android/input.h>
 #include <android/native_window_jni.h>
 #include <jni.h>
 #include <pthread.h>
@@ -16,19 +16,12 @@
 
 #define MAX_PENDING_TOUCHES 32
 #define WINDOW_BLACK 0xff000000
-#define DRAG_SCROLL_STEP 48
-
-enum {
-    MOTION_ACTION_DOWN = 0,
-    MOTION_ACTION_UP = 1,
-    MOTION_ACTION_MOVE = 2,
-    MOTION_ACTION_CANCEL = 3
-};
+#define DRAG_SCROLL_STEP 100
 
 typedef enum {
     SHOWING_NOTHING,
     SHOWING_BLACK,
-    SHOWING_CANVAS
+    SHOWING_PIXELS
 } window_content;
 
 typedef struct {
@@ -42,139 +35,130 @@ static struct {
     ANativeWindow *window;
     int width;
     int height;
+    int has_new_window;
     touch_event pending[MAX_PENDING_TOUCHES];
     int pending_count;
-    color_t *canvas;
-    color_t *shown_canvas;
-    int canvas_size;
-    int *source_columns;
-    int source_columns_size;
-    window_content shown;
-} data = { .lock = PTHREAD_MUTEX_INITIALIZER };
+} shared = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
 static struct {
-    int anchor_y;
+    int width;
+    int height;
+    uint32_t *pixels;
+    uint32_t *shown_pixels;
+    window_content shown;
+} frame;
+
+static struct {
+    float anchor_y;
     int has_scrolled;
 } drag;
 
-static uint32_t to_window_pixel(color_t color)
+static void free_pixels(void)
 {
-    return (color & 0xff00ff00) | ((color & 0xff) << 16) | ((color >> 16) & 0xff);
+    free(frame.pixels);
+    free(frame.shown_pixels);
+    frame.pixels = 0;
+    frame.shown_pixels = 0;
+    frame.shown = SHOWING_NOTHING;
 }
 
-static int reserve_canvas(int size)
+static int allocate_pixels(void)
 {
-    if (size <= data.canvas_size) {
+    if (frame.pixels) {
         return 1;
     }
-    color_t *canvas = realloc(data.canvas, size * sizeof(color_t));
-    if (canvas) {
-        data.canvas = canvas;
-    }
-    color_t *shown_canvas = realloc(data.shown_canvas, size * sizeof(color_t));
-    if (shown_canvas) {
-        data.shown_canvas = shown_canvas;
-    }
-    if (!canvas || !shown_canvas) {
+    size_t size = (size_t) frame.width * frame.height * sizeof(uint32_t);
+    frame.pixels = malloc(size);
+    frame.shown_pixels = malloc(size);
+    if (!frame.pixels || !frame.shown_pixels) {
+        free_pixels();
         return 0;
     }
-    data.canvas_size = size;
     return 1;
 }
 
-static int get_canvas_width(void)
-{
-    return data.width;
-}
-
-static int get_canvas_height(void)
-{
-    return data.height;
-}
-
-static int read_canvas(void)
+static int read_pixels(void)
 {
     const graphics_renderer_interface *renderer = graphics_renderer();
-    int width = get_canvas_width();
-    int height = get_canvas_height();
-    return second_screen_has_content() && renderer->save_second_screen_buffer && reserve_canvas(width * height) &&
-        renderer->save_second_screen_buffer(data.canvas, 0, 0, width, height, width);
+    return second_screen_has_content() && renderer->read_second_screen_pixels && allocate_pixels() &&
+        renderer->read_second_screen_pixels(frame.pixels, frame.width, frame.height);
 }
 
-static int is_canvas_shown(void)
+static int is_shown(int has_pixels)
 {
-    return data.shown == SHOWING_CANVAS &&
-        memcmp(data.canvas, data.shown_canvas, get_canvas_width() * get_canvas_height() * sizeof(color_t)) == 0;
+    if (!has_pixels) {
+        return frame.shown == SHOWING_BLACK;
+    }
+    return frame.shown == SHOWING_PIXELS &&
+        memcmp(frame.pixels, frame.shown_pixels, (size_t) frame.width * frame.height * sizeof(uint32_t)) == 0;
 }
 
-static const int *get_source_columns(int window_width)
+static void copy_pixels(const ANativeWindow_Buffer *buffer)
 {
-    if (window_width > data.source_columns_size) {
-        int *columns = realloc(data.source_columns, window_width * sizeof(int));
-        if (!columns) {
-            return 0;
-        }
-        data.source_columns = columns;
-        data.source_columns_size = window_width;
+    uint32_t *rows = buffer->bits;
+    for (int y = 0; y < frame.height; y++) {
+        memcpy(&rows[y * buffer->stride], &frame.pixels[y * frame.width], frame.width * sizeof(uint32_t));
     }
-    for (int x = 0; x < window_width; x++) {
-        data.source_columns[x] = x * get_canvas_width() / window_width;
-    }
-    return data.source_columns;
-}
-
-static void scale_canvas(const ANativeWindow_Buffer *buffer)
-{
-    const int *columns = get_source_columns(buffer->width);
-    if (!columns) {
-        return;
-    }
-    uint32_t *bits = buffer->bits;
-    for (int y = 0; y < buffer->height; y++) {
-        uint32_t *row = &bits[y * buffer->stride];
-        const color_t *source = &data.canvas[y * get_canvas_height() / buffer->height * get_canvas_width()];
-        for (int x = 0; x < buffer->width; x++) {
-            row[x] = to_window_pixel(source[columns[x]]);
-        }
-    }
+    uint32_t *shown_pixels = frame.shown_pixels;
+    frame.shown_pixels = frame.pixels;
+    frame.pixels = shown_pixels;
+    frame.shown = SHOWING_PIXELS;
 }
 
 static void fill_black(const ANativeWindow_Buffer *buffer)
 {
-    uint32_t *bits = buffer->bits;
+    uint32_t *rows = buffer->bits;
     for (int i = 0; i < buffer->stride * buffer->height; i++) {
-        bits[i] = WINDOW_BLACK;
+        rows[i] = WINDOW_BLACK;
     }
+    frame.shown = SHOWING_BLACK;
 }
 
-static void draw_window(void)
+static void show(ANativeWindow *window, int has_pixels)
 {
-    int has_canvas = read_canvas();
-    if (has_canvas ? is_canvas_shown() : data.shown == SHOWING_BLACK) {
-        return;
-    }
     ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(data.window, &buffer, 0) != 0) {
+    if (ANativeWindow_lock(window, &buffer, 0) != 0) {
         return;
     }
-    if (has_canvas) {
-        scale_canvas(&buffer);
-        memcpy(data.shown_canvas, data.canvas, get_canvas_width() * get_canvas_height() * sizeof(color_t));
-        data.shown = SHOWING_CANVAS;
+    if (buffer.width != frame.width || buffer.height != frame.height) {
+        fill_black(&buffer);
+        frame.shown = SHOWING_NOTHING;
+    } else if (has_pixels) {
+        copy_pixels(&buffer);
     } else {
         fill_black(&buffer);
-        data.shown = SHOWING_BLACK;
     }
-    ANativeWindow_unlockAndPost(data.window);
+    ANativeWindow_unlockAndPost(window);
+}
+
+static ANativeWindow *acquire_window(int *is_new)
+{
+    pthread_mutex_lock(&shared.lock);
+    ANativeWindow *window = shared.window;
+    if (window) {
+        ANativeWindow_acquire(window);
+    }
+    *is_new = shared.has_new_window;
+    shared.has_new_window = 0;
+    pthread_mutex_unlock(&shared.lock);
+    return window;
 }
 
 void android_bottom_screen_present(void)
 {
-    pthread_mutex_lock(&data.lock);
-    if (data.window) {
-        draw_window();
+    if (!frame.width || !frame.height) {
+        return;
     }
-    pthread_mutex_unlock(&data.lock);
+    int has_pixels = read_pixels();
+    int is_new_window;
+    ANativeWindow *window = acquire_window(&is_new_window);
+    if (!window) {
+        return;
+    }
+    if (is_new_window || !is_shown(has_pixels)) {
+        show(window, has_pixels);
+    }
+    ANativeWindow_release(window);
 }
 
 static mouse to_screen_mouse(const touch_event *event)
@@ -184,16 +168,15 @@ static mouse to_screen_mouse(const touch_event *event)
     m.y = (int) (event->y * second_screen_height());
     m.is_inside_window = 1;
     m.window_has_focus = 1;
-    m.is_touch = 1;
     switch (event->action) {
-        case MOTION_ACTION_DOWN:
+        case AMOTION_EVENT_ACTION_DOWN:
             m.left.went_down = 1;
             m.left.is_down = 1;
             break;
-        case MOTION_ACTION_MOVE:
+        case AMOTION_EVENT_ACTION_MOVE:
             m.left.is_down = 1;
             break;
-        case MOTION_ACTION_UP:
+        case AMOTION_EVENT_ACTION_UP:
             m.left.went_up = 1;
             break;
         default:
@@ -202,17 +185,17 @@ static mouse to_screen_mouse(const touch_event *event)
     return m;
 }
 
-static void scroll_with_drag(const mouse *m)
+static void scroll_with_drag(const touch_event *event, const mouse *m)
 {
-    int distance = m->y - drag.anchor_y;
-    while (abs(distance) >= DRAG_SCROLL_STEP) {
+    float distance = event->y * frame.height - drag.anchor_y;
+    while (distance <= -DRAG_SCROLL_STEP || distance >= DRAG_SCROLL_STEP) {
         int direction = distance < 0 ? -1 : 1;
         mouse scroll = *m;
         scroll.scrolled = direction < 0 ? SCROLL_DOWN : SCROLL_UP;
         second_screen_handle_input(&scroll);
         drag.anchor_y += direction * DRAG_SCROLL_STEP;
         drag.has_scrolled = 1;
-        distance = m->y - drag.anchor_y;
+        distance = event->y * frame.height - drag.anchor_y;
     }
 }
 
@@ -220,14 +203,14 @@ static void handle_touch(const touch_event *event)
 {
     mouse m = to_screen_mouse(event);
     switch (event->action) {
-        case MOTION_ACTION_DOWN:
-            drag.anchor_y = m.y;
+        case AMOTION_EVENT_ACTION_DOWN:
+            drag.anchor_y = event->y * frame.height;
             drag.has_scrolled = 0;
             break;
-        case MOTION_ACTION_MOVE:
-            scroll_with_drag(&m);
+        case AMOTION_EVENT_ACTION_MOVE:
+            scroll_with_drag(event, &m);
             break;
-        case MOTION_ACTION_UP:
+        case AMOTION_EVENT_ACTION_UP:
             if (drag.has_scrolled) {
                 m.left.went_up = 0;
             }
@@ -242,16 +225,20 @@ void android_bottom_screen_handle_input(void)
 {
     touch_event events[MAX_PENDING_TOUCHES];
 
-    pthread_mutex_lock(&data.lock);
-    int count = data.pending_count;
-    memcpy(events, data.pending, count * sizeof(touch_event));
-    data.pending_count = 0;
-    int width = data.width;
-    int height = data.height;
-    int has_window = data.window != 0;
-    pthread_mutex_unlock(&data.lock);
+    pthread_mutex_lock(&shared.lock);
+    int count = shared.pending_count;
+    memcpy(events, shared.pending, count * sizeof(touch_event));
+    shared.pending_count = 0;
+    int width = shared.window ? shared.width : 0;
+    int height = shared.window ? shared.height : 0;
+    pthread_mutex_unlock(&shared.lock);
 
-    second_screen_set_size(has_window ? width : 0, has_window ? height : 0);
+    if (width != frame.width || height != frame.height) {
+        free_pixels();
+        frame.width = width;
+        frame.height = height;
+    }
+    second_screen_set_size(width, height);
     for (int i = 0; i < count; i++) {
         handle_touch(&events[i]);
     }
@@ -265,33 +252,33 @@ JNIEXPORT void JNICALL Java_com_github_Keriew_augustus_BottomScreen_nativeSetSur
         ANativeWindow_setBuffersGeometry(window, surface_width, surface_height, WINDOW_FORMAT_RGBA_8888);
     }
 
-    pthread_mutex_lock(&data.lock);
-    if (data.window) {
-        ANativeWindow_release(data.window);
+    pthread_mutex_lock(&shared.lock);
+    if (shared.window) {
+        ANativeWindow_release(shared.window);
     }
-    data.window = window;
-    data.width = surface_width;
-    data.height = surface_height;
-    data.pending_count = 0;
-    data.shown = SHOWING_NOTHING;
-    pthread_mutex_unlock(&data.lock);
+    shared.window = window;
+    shared.width = surface_width;
+    shared.height = surface_height;
+    shared.has_new_window = 1;
+    shared.pending_count = 0;
+    pthread_mutex_unlock(&shared.lock);
 }
 
 JNIEXPORT void JNICALL Java_com_github_Keriew_augustus_BottomScreen_nativeTouch(
     JNIEnv *env, jclass cls, jint action, jfloat x, jfloat y)
 {
-    pthread_mutex_lock(&data.lock);
-    touch_event *last = data.pending_count ? &data.pending[data.pending_count - 1] : 0;
-    if (last && last->action == MOTION_ACTION_MOVE && action == MOTION_ACTION_MOVE) {
+    pthread_mutex_lock(&shared.lock);
+    touch_event *last = shared.pending_count ? &shared.pending[shared.pending_count - 1] : 0;
+    if (last && last->action == AMOTION_EVENT_ACTION_MOVE && action == AMOTION_EVENT_ACTION_MOVE) {
         last->x = x;
         last->y = y;
-    } else if (data.pending_count < MAX_PENDING_TOUCHES) {
-        touch_event *event = &data.pending[data.pending_count++];
+    } else if (shared.pending_count < MAX_PENDING_TOUCHES) {
+        touch_event *event = &shared.pending[shared.pending_count++];
         event->action = action;
         event->x = x;
         event->y = y;
     }
-    pthread_mutex_unlock(&data.lock);
+    pthread_mutex_unlock(&shared.lock);
 }
 
 #endif // __ANDROID__

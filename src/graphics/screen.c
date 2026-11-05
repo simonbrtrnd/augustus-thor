@@ -46,12 +46,12 @@ void screen_set_resolution(int width, int height)
 
 int screen_width(void)
 {
-    return second_screen_is_current() ? second_screen_width() : data.width;
+    return second_screen_is_drawing() ? second_screen_width() : data.width;
 }
 
 int screen_height(void)
 {
-    return second_screen_is_current() ? second_screen_height() : data.height;
+    return second_screen_is_drawing() ? second_screen_height() : data.height;
 }
 
 int screen_dialog_offset_x(void)

@@ -4,10 +4,8 @@
 #include "input/mouse.h"
 
 /**
- * A second physical screen, such as the touch screen of the AYN Thor. While it is active,
- * it shows a panel with the sidebar controls and the main screen shows the city alone.
- * Dialogs such as the city messages also move to the second screen.
- * The second screen has its own size and coordinates, in game pixels.
+ * A second physical screen, such as the touch screen of the AYN Thor.
+ * It has its own size and coordinates, in game pixels.
  */
 
 int second_screen_is_active(void);
@@ -17,8 +15,14 @@ int second_screen_width(void);
 int second_screen_height(void);
 
 /**
- * Whether the game is drawing on the second screen or handling its input.
- * While it is, the screen size and the dialog offset are those of the second screen.
+ * Whether the game is drawing on the second screen.
+ * While it is, the screen size is that of the second screen.
+ */
+int second_screen_is_drawing(void);
+
+/**
+ * Whether the game is drawing on the second screen or handling a touch on it.
+ * While it is, the dialog offset is that of the second screen.
  */
 int second_screen_is_current(void);
 
@@ -30,7 +34,7 @@ void second_screen_set_size(int width, int height);
 
 /**
  * Runs the draw function on the second screen, at the scale of its current content.
- * Returns 0 without drawing when the second screen is not active.
+ * Returns 0 without drawing when the second screen cannot be drawn on.
  */
 int second_screen_draw(void (*draw)(void));
 
@@ -51,6 +55,7 @@ void second_screen_draw_marble_background(void);
 
 /**
  * Called by the platform for each touch on the second screen, in its game pixels.
+ * The touch goes to the current window, once that window has drawn the second screen.
  */
 void second_screen_handle_input(const mouse *m);
 

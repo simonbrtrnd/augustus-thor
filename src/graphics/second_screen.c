@@ -19,7 +19,9 @@ static struct {
     int screen_height;
     float pixel_scale;
     int has_content;
-    int is_current;
+    window_id content_window;
+    int is_drawing;
+    int is_handling_input;
 } data = { .pixel_scale = PANEL_PIXEL_SCALE };
 
 int second_screen_is_active(void)
@@ -37,9 +39,14 @@ int second_screen_height(void)
     return (int) (data.screen_height / data.pixel_scale);
 }
 
+int second_screen_is_drawing(void)
+{
+    return data.is_drawing;
+}
+
 int second_screen_is_current(void)
 {
-    return data.is_current;
+    return data.is_drawing || data.is_handling_input;
 }
 
 void second_screen_set_size(int width, int height)
@@ -60,17 +67,17 @@ static int begin_drawing(float pixel_scale)
     if (!second_screen_is_active() || !renderer->begin_second_screen_drawing) {
         return 0;
     }
-    data.pixel_scale = pixel_scale;
     if (!renderer->begin_second_screen_drawing(data.screen_width, data.screen_height, pixel_scale)) {
         return 0;
     }
-    data.is_current = 1;
+    data.pixel_scale = pixel_scale;
+    data.is_drawing = 1;
     return 1;
 }
 
 static void end_drawing(void)
 {
-    data.is_current = 0;
+    data.is_drawing = 0;
     graphics_renderer()->end_second_screen_drawing();
 }
 
@@ -82,6 +89,7 @@ static int begin_background(float pixel_scale)
     }
     graphics_clear_screen();
     data.has_content = 1;
+    data.content_window = window_get_id();
     return 1;
 }
 
@@ -133,9 +141,12 @@ void second_screen_draw_marble_background(void)
 
 void second_screen_handle_input(const mouse *m)
 {
-    data.is_current = 1;
+    if (!data.has_content || data.content_window != window_get_id()) {
+        return;
+    }
+    data.is_handling_input = 1;
     window_handle_second_screen_input(m);
-    data.is_current = 0;
+    data.is_handling_input = 0;
 }
 
 void second_screen_reset_content(void)

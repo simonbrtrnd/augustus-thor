@@ -12,6 +12,7 @@
 
 #define PANEL_PIXEL_SCALE 4.0f
 #define DIALOG_MARGIN 8
+#define DIALOG_BACKGROUND_DARKNESS 8
 
 static struct {
     int screen_width;
@@ -116,6 +117,7 @@ int second_screen_draw_dialog_background(int width, int height, void (*draw)(voi
         return 0;
     }
     second_screen_draw_marble_background();
+    graphics_shade_rect(0, 0, second_screen_width() + 1, second_screen_height() + 1, DIALOG_BACKGROUND_DARKNESS);
     draw();
     end_drawing();
     return 1;

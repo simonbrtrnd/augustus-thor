@@ -9,8 +9,6 @@
 #include "graphics/text.h"
 #include "graphics/window.h"
 
-#define SIDEBAR_WIDTH 180
-
 static const int TOP_OFFSETS[] = { 30, 55, 80, 105, 130 };
 
 static int determine_width(const uint8_t *text)
@@ -34,8 +32,7 @@ void warning_draw(void)
         return;
     }
 
-    int sidebar_width = second_screen_is_active() ? 0 : SIDEBAR_WIDTH;
-    int center = (screen_width() - sidebar_width) / 2;
+    int center = (screen_width() - (second_screen_is_active() ? 0 : 180)) / 2;
     for (int i = 0; i < 5; i++) {
         const uint8_t *text = city_warning_get(i);
         if (!text) {

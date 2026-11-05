@@ -937,18 +937,14 @@ static void handle_input(const mouse *m, const hotkeys *h)
     widget_city_handle_input(m, h);
 }
 
-static int handle_sidebar_military_input(const mouse *m)
-{
-    return config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR) && widget_sidebar_military_handle_input(m);
-}
-
 static void handle_input_military(const mouse *m, const hotkeys *h)
 {
     handle_hotkeys(h);
     if (widget_top_menu_handle_input(m, h)) {
         return;
     }
-    if (!second_screen_is_active() && handle_sidebar_military_input(m)) {
+    if (!second_screen_is_active() && config_get(CONFIG_UI_SHOW_MILITARY_SIDEBAR) &&
+        widget_sidebar_military_handle_input(m)) {
         return;
     }
     widget_city_handle_input_military(m, h, formation_get_selected());

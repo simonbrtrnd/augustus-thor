@@ -378,7 +378,6 @@ static int get_direction(const mouse* m, int window_scroll)
         y -= data.limits.y;
         data.constant_input = 1;
     }
-    // The second screen holds the touch panel, and the camera is moved with a stick or by dragging
     int is_mouse_edge_scrolling = !m->is_touch && !config_get(CONFIG_UI_DISABLE_MOUSE_EDGE_SCROLLING) &&
         !second_screen_is_active();
     // mouse near map edge

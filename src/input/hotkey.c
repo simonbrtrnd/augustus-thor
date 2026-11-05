@@ -522,6 +522,13 @@ static void set_definition_for_action(hotkey_action action, hotkey_definition *d
         case HOTKEY_CLOSE:
             def->action = &data.hotkey_state.close_pressed;
             break;
+        case HOTKEY_SHOW_NEXT_OVERLAY:
+            def->action = &data.hotkey_state.cycle_overlay;
+            break;
+        case HOTKEY_SHOW_PREVIOUS_OVERLAY:
+            def->action = &data.hotkey_state.cycle_overlay;
+            def->value = -1;
+            break;
         default:
             def->action = 0;
     }

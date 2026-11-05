@@ -8,4 +8,6 @@ void window_overlay_menu_update(void);
 
 const uint8_t *get_current_overlay_text(void);
 
+int window_overlay_menu_get_adjacent_overlay(int overlay, int step);
+
 #endif // WINDOW_OVERLAY_MENU_H

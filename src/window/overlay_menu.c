@@ -763,6 +763,32 @@ void window_overlay_menu_update(void)
     data.selected_overlay_id = game_state_overlay();
 }
 
+static int collect_cycled_overlays(const overlay_menu_entry *entries, int *overlays, int count)
+{
+    for (int i = 0; entries[i].overlay != NO_ITEM; i++) {
+        if (entries[i].submenu) {
+            count = collect_cycled_overlays(entries[i].submenu, overlays, count);
+        } else if (entries[i].translation_type != BUILDING_TYPE && count < MAX_BUTTONS) {
+            overlays[count++] = entries[i].overlay;
+        }
+    }
+    return count;
+}
+
+int window_overlay_menu_get_adjacent_overlay(int overlay, int step)
+{
+    int overlays[MAX_BUTTONS];
+    int count = collect_cycled_overlays(overlay_menu, overlays, 0);
+    int index = 0;
+    for (int i = 0; i < count; i++) {
+        if (overlays[i] == overlay) {
+            index = i;
+            break;
+        }
+    }
+    return overlays[(index + step + count) % count];
+}
+
 const uint8_t *get_current_overlay_text(void)
 {
     const overlay_menu_entry overlay_item = find_overlay(overlay_menu, data.selected_overlay_id);

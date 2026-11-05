@@ -774,6 +774,12 @@ static void handle_hotkeys(const hotkeys *h)
         show_overlay_from_grid_offset(widget_city_current_grid_offset());
         window_overlay_menu_update();
     }
+    if (h->cycle_overlay) {
+        static int overlay_warning_id;
+        show_overlay(window_overlay_menu_get_adjacent_overlay(game_state_overlay(), h->cycle_overlay));
+        window_overlay_menu_update();
+        overlay_warning_id = city_warning_show_custom(get_current_overlay_text(), overlay_warning_id);
+    }
     if (h->toggle_overlay) {
         exit_military_command();
         game_state_toggle_overlay();

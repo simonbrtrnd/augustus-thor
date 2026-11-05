@@ -148,7 +148,9 @@ static const char *ini_keys[] = {
     "editor_empire_pick_tool",
     "game_quicksave",
     "game_quickload",
-    "close"
+    "close",
+    "show_next_overlay",
+    "show_previous_overlay"
 };
 
 static struct {

@@ -150,7 +150,8 @@ static const char *ini_keys[] = {
     "game_quickload",
     "close",
     "show_next_overlay",
-    "show_previous_overlay"
+    "show_previous_overlay",
+    "toggle_messages_screen"
 };
 
 static struct {

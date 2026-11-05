@@ -2398,7 +2398,9 @@ static translation_string all_strings[] = {
     {TR_TERRAIN_BEACH, "Beach"},
     {TR_TERRAIN_BEACH_DESC, "A beach of fine sand. Pleasing to the eye and favoured by strollers, who dawdle along it, it yields sand and clay in plenty for the city."},
     {TR_CHEAT_FILL_MARKETS, "Filled all markets with food and goods"},
-    {TR_CONFIG_UI_MESSAGES_ON_SECOND_SCREEN, "Show messages on the second screen"}
+    {TR_CONFIG_UI_MESSAGES_ON_SECOND_SCREEN, "Show messages on the second screen"},
+    {TR_MESSAGES_ON_SECOND_SCREEN, "Messages on the second screen"},
+    {TR_MESSAGES_ON_MAIN_SCREEN, "Messages on the main screen"}
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

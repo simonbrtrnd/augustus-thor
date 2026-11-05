@@ -2398,6 +2398,8 @@ static translation_string all_strings[] = {
     {TR_TERRAIN_BEACH, "Plage"},
     {TR_TERRAIN_BEACH_DESC, "Une plage de sable fin. Agréable à contempler et prisée des flâneurs qui viennent s'y prélasser, elle fournit du sable et de l'argile en abondance à la cité."},
     {TR_CONFIG_UI_MESSAGES_ON_SECOND_SCREEN, "Afficher les messages sur l'écran du bas"},
+    {TR_MESSAGES_ON_SECOND_SCREEN, "Messages sur l'écran du bas"},
+    {TR_MESSAGES_ON_MAIN_SCREEN, "Messages sur l'écran du haut"},
 };
 
 void translation_french(const translation_string **strings, int *num_strings)

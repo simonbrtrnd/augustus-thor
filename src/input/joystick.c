@@ -15,7 +15,7 @@
 #include <string.h>
 
 #define HOTKEY_OFFSET MAPPING_ACTION_ROTATE_MAP_LEFT
-#define MAX_HOTKEYS 11
+#define MAX_HOTKEYS 12
 #define MAX_AXIS 8
 #define MAX_BUTTONS 20
 #define MAX_TRACKBALLS 4
@@ -118,7 +118,8 @@ static hotkey_action JOYSTICK_MAPPING_TO_HOTKEY_ACTION[MAX_HOTKEYS] = {
     HOTKEY_ZOOM_OUT,
     HOTKEY_TOGGLE_OVERLAY,
     HOTKEY_SHOW_NEXT_OVERLAY,
-    HOTKEY_SHOW_PREVIOUS_OVERLAY
+    HOTKEY_SHOW_PREVIOUS_OVERLAY,
+    HOTKEY_TOGGLE_MESSAGES_SCREEN
 };
 
 static void update_hat(joystick_hat *hat, joystick_hat_position position)

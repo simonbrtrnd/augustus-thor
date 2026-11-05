@@ -44,9 +44,6 @@
 
 #define MINIMAP_Y_OFFSET 59
 #define PANEL_MARGIN 6
-#define PANEL_LEFT_COLUMN_WIDTH 130
-#define PANEL_MINIMAP_HEIGHT 96
-#define PANEL_RATINGS_Y 206
 #define PANEL_LIST_ROW_HEIGHT 24
 #define PANEL_LIST_ROW_GAP 4
 #define PANEL_LIST_COLUMN_GAP 6
@@ -57,6 +54,15 @@
 #define PANEL_RATINGS_LINE_HEIGHT 12
 #define PANEL_PLATE_BEVEL 3
 #define PANEL_PRESSED_MILLIS 150
+#define MESSAGE_COUNT_X_IN_ICON 37
+#define MESSAGE_COUNT_Y_IN_ICON 8
+
+typedef struct {
+    int x;
+    int y;
+    int width;
+    int height;
+} panel_area;
 
 static void button_overlay(int param1, int param2);
 static void button_collapse_expand(int param1, int param2);
@@ -71,6 +77,7 @@ static void button_toggle_grid(int param1, int param2);
 static void button_rotate_north(int param1, int param2);
 static void button_rotate(int clockwise, int param2);
 static void button_toggle_pause(int param1, int param2);
+static void button_panel_overlay(const generic_button *button);
 
 static image_button buttons_overlays_collapse_sidebar[] = {
     {127, 5, 31, 20, IB_NORMAL, 90, 0, button_collapse_expand, button_none, 0, 0, 1},
@@ -123,9 +130,10 @@ static image_button buttons_top_expanded[] = {
     {123, 184, 33, 22, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
-static image_button panel_button_overlay[] = {
-    {142, 6, 123, 33, IB_NORMAL, 93, 0, button_overlay, button_help, 0, MESSAGE_DIALOG_OVERLAYS, 1},
-};
+static const panel_area panel_minimap = {6, 6, 130, 96};
+static const panel_area panel_ratings = {6, 206, 130, 58};
+
+static generic_button panel_button_overlay = {142, 6, 123, 33, button_panel_overlay};
 
 static image_button panel_button_pause[] = {
     {271, 6, 33, 33, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, "UI", "Pause Button"},
@@ -133,8 +141,7 @@ static image_button panel_button_pause[] = {
 
 static image_button panel_buttons_left[] = {
     {6, 110, 130, 42, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 0, button_advisors, button_none, 0, 0, 1},
-    {6, 158, 130, 42, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_help, 0,
-        MESSAGE_DIALOG_EMPIRE_MAP, 1},
+    {6, 158, 130, 42, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_none, 0, 0, 1},
 };
 
 static image_button panel_buttons_build[] = {
@@ -154,7 +161,7 @@ static image_button panel_buttons_build[] = {
 
 static image_button panel_buttons_tools[] = {
     {142, 231, 50, 33, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 48, button_undo, button_none, 0, 0, 1},
-    {198, 231, 50, 33, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_help, 0, MESSAGE_DIALOG_MESSAGES, 1},
+    {198, 231, 50, 33, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_none, 0, 0, 1},
     {254, 231, 50, 33, IB_BUILD, GROUP_MESSAGE_ICON, 22, button_go_to_problem, button_none, 0, 0, 1},
     {142, 45, 36, 24, IB_NORMAL, 0, 0, button_toggle_grid, button_none, 0, 0, 1, "UI", "Toggle Grid Button" },
     {184, 45, 36, 24, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 3, button_rotate_north, button_none, 0, 0, 1},
@@ -383,8 +390,25 @@ static void draw_panel_covering_buttons(image_button *buttons, int count)
     }
 }
 
-static void draw_panel_ratings(int x, int y, int width, int height)
+static void draw_panel_list_row(int x, int y, int width, int height, int is_highlighted)
 {
+    large_label_draw_custom_size(x, y, width, height);
+    if (is_highlighted) {
+        graphics_light_up_rect(x, y, width, height, 3);
+    }
+}
+
+static int get_panel_list_text_y(int row_y, int row_height)
+{
+    return row_y + (row_height - PANEL_PLATE_BEVEL - PANEL_LIST_FONT_CAP_HEIGHT) / 2;
+}
+
+static void draw_panel_ratings(const panel_area *area)
+{
+    int x = area->x;
+    int y = area->y;
+    int width = area->width;
+    int height = area->height;
     const int ratings[] = {
         city_rating_culture(), city_rating_prosperity(), city_rating_peace(), city_rating_favor()
     };
@@ -402,17 +426,19 @@ static void draw_panel_ratings(int x, int y, int width, int height)
 
 static void draw_panel_overlay_button(void)
 {
-    const image_button *button = &panel_button_overlay[0];
-    large_label_draw_custom_size(button->x_offset, button->y_offset, button->width, button->height);
+    const generic_button *button = &panel_button_overlay;
+    draw_panel_list_row(button->x, button->y, button->width, button->height, 0);
     const uint8_t *text = game_state_overlay() ? get_current_overlay_text() : lang_get_string(6, 4);
-    text_draw_centered_ellipsized(text, button->x_offset + PANEL_LIST_TEXT_MARGIN,
-        widget_sidebar_city_get_panel_list_text_y(button->y_offset, button->height),
+    text_draw_centered_ellipsized(text, button->x + PANEL_LIST_TEXT_MARGIN,
+        get_panel_list_text_y(button->y, button->height),
         button->width - 2 * PANEL_LIST_TEXT_MARGIN, PANEL_LIST_FONT, PANEL_TEXT_COLOR);
 }
 
 static void update_panel_buttons(void)
 {
-    enable_building_buttons();
+    if (building_menu_has_changed()) {
+        enable_building_buttons();
+    }
     int asclepius = config_get(CONFIG_UI_DRAW_ASCLEPIUS);
     panel_buttons_build[4].assetlist_name = asclepius ? "UI" : 0;
     panel_buttons_build[4].image_name = asclepius ? "Asclepius Button" : 0;
@@ -426,20 +452,19 @@ void widget_sidebar_city_draw_panel(void)
 {
     second_screen_draw_marble_background();
     update_panel_buttons();
-    widget_minimap_draw_decorated(PANEL_MARGIN + 1, PANEL_MARGIN + 1, PANEL_LEFT_COLUMN_WIDTH - 2,
-        PANEL_MINIMAP_HEIGHT);
+    widget_minimap_draw_decorated(panel_minimap.x + 1, panel_minimap.y + 1, panel_minimap.width - 2,
+        panel_minimap.height);
     draw_panel_overlay_button();
     draw_panel_covering_buttons(panel_button_pause, 1);
     draw_panel_covering_buttons(panel_buttons_left, 2);
-    draw_panel_ratings(PANEL_MARGIN, PANEL_RATINGS_Y, PANEL_LEFT_COLUMN_WIDTH,
-        second_screen_height() - PANEL_MARGIN - PANEL_RATINGS_Y);
+    draw_panel_ratings(&panel_ratings);
     draw_panel_covering_buttons(panel_buttons_build, 12);
     draw_panel_covering_buttons(panel_buttons_tools, 7);
     if (panel_buttons_tools[1].enabled) {
         const image *img = image_get(get_button_image_id(&panel_buttons_tools[1]));
         float x, y;
         float scale = get_covering_placement(&panel_buttons_tools[1], img, &x, &y);
-        draw_message_count((int) (x + 37 * scale), (int) (y + 8 * scale));
+        draw_message_count((int) (x + MESSAGE_COUNT_X_IN_ICON * scale), (int) (y + MESSAGE_COUNT_Y_IN_ICON * scale));
     }
 }
 
@@ -462,7 +487,7 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m)
     if (widget_minimap_handle_mouse(m)) {
         return 1;
     }
-    return image_buttons_handle_mouse(m, 0, 0, panel_button_overlay, 1, 0) ||
+    return generic_buttons_handle_mouse(m, 0, 0, &panel_button_overlay, 1, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_button_pause, 1, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_left, 2, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_build, 12, 0) ||
@@ -479,30 +504,7 @@ static int get_panel_list_top(void)
     return PANEL_MARGIN + PANEL_LIST_ROW_HEIGHT + PANEL_MARGIN;
 }
 
-void widget_sidebar_city_draw_panel_list_row(int x, int y, int width, int height, int is_highlighted)
-{
-    large_label_draw_custom_size(x, y, width, height);
-    if (is_highlighted) {
-        graphics_light_up_rect(x, y, width, height, 3);
-    }
-}
-
-font_t widget_sidebar_city_get_panel_list_font(void)
-{
-    return PANEL_LIST_FONT;
-}
-
-color_t widget_sidebar_city_get_panel_text_color(void)
-{
-    return PANEL_TEXT_COLOR;
-}
-
-int widget_sidebar_city_get_panel_list_text_y(int row_y, int row_height)
-{
-    return row_y + (row_height - PANEL_PLATE_BEVEL - PANEL_LIST_FONT_CAP_HEIGHT) / 2;
-}
-
-int widget_sidebar_city_draw_panel_list_arrow(int x, int y, int width, int height)
+static int draw_panel_list_arrow(int x, int y, int width, int height)
 {
     int image_id = assets_get_image_id("UI", "Expand Menu Icon");
     const image *img = image_get(image_id);
@@ -514,34 +516,64 @@ int widget_sidebar_city_draw_panel_list_arrow(int x, int y, int width, int heigh
 void widget_sidebar_city_draw_panel_list_frame(void)
 {
     second_screen_draw_marble_background();
-    widget_sidebar_city_draw_panel_list_row(PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(),
-        PANEL_LIST_ROW_HEIGHT, 0);
-    lang_text_draw_centered_colored(12, 0, PANEL_MARGIN, widget_sidebar_city_get_panel_list_text_y(PANEL_MARGIN,
-        PANEL_LIST_ROW_HEIGHT), get_panel_list_width(), PANEL_LIST_FONT, PANEL_TEXT_COLOR);
+    draw_panel_list_row(PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(), PANEL_LIST_ROW_HEIGHT, 0);
+    lang_text_draw_centered_colored(12, 0, PANEL_MARGIN, get_panel_list_text_y(PANEL_MARGIN, PANEL_LIST_ROW_HEIGHT),
+        get_panel_list_width(), PANEL_LIST_FONT, PANEL_TEXT_COLOR);
 }
 
-void widget_sidebar_city_get_panel_list_item(int index, int count, int *x, int *y, int *width, int *height)
+static void place_panel_list_item(int index, int count, generic_button *button)
 {
     int list_height = second_screen_height() - PANEL_MARGIN - get_panel_list_top();
     int max_rows = (list_height + PANEL_LIST_ROW_GAP) / (PANEL_LIST_ROW_HEIGHT + PANEL_LIST_ROW_GAP);
     int columns = count > max_rows ? (count + max_rows - 1) / max_rows : 1;
     int rows = (count + columns - 1) / columns;
-    *width = (get_panel_list_width() - (columns - 1) * PANEL_LIST_COLUMN_GAP) / columns;
-    *height = PANEL_LIST_ROW_HEIGHT;
-    *x = PANEL_MARGIN + (index / rows) * (*width + PANEL_LIST_COLUMN_GAP);
-    *y = get_panel_list_top() + (index % rows) * (PANEL_LIST_ROW_HEIGHT + PANEL_LIST_ROW_GAP);
+    button->width = (get_panel_list_width() - (columns - 1) * PANEL_LIST_COLUMN_GAP) / columns;
+    button->height = PANEL_LIST_ROW_HEIGHT;
+    button->x = PANEL_MARGIN + (index / rows) * (button->width + PANEL_LIST_COLUMN_GAP);
+    button->y = get_panel_list_top() + (index % rows) * (PANEL_LIST_ROW_HEIGHT + PANEL_LIST_ROW_GAP);
 }
 
-int widget_sidebar_city_panel_list_back_clicked(const mouse *m)
+void widget_sidebar_city_draw_panel_list_item(int index, int count, const panel_list_item *item,
+    generic_button *button)
 {
-    return m->left.went_up &&
-        is_in_rect(m, PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(), PANEL_LIST_ROW_HEIGHT);
+    place_panel_list_item(index, count, button);
+    int x = button->x;
+    int y = button->y;
+    int width = button->width;
+    int height = button->height;
+    draw_panel_list_row(x, y, width, height, item->is_highlighted);
+    int text_y = get_panel_list_text_y(y, height);
+    int label_width = width - 2 * PANEL_LIST_TEXT_MARGIN;
+    if (item->value) {
+        int value_width = text_get_width(item->value, PANEL_LIST_FONT);
+        text_draw(item->value, x + width - PANEL_LIST_TEXT_MARGIN - value_width, text_y, PANEL_LIST_FONT,
+            PANEL_TEXT_COLOR);
+        label_width -= value_width + PANEL_LIST_TEXT_MARGIN;
+    } else if (item->has_submenu) {
+        label_width -= draw_panel_list_arrow(x, y, width, height);
+    }
+    if (item->is_label_centered) {
+        text_draw_centered_ellipsized(item->label, x + PANEL_LIST_TEXT_MARGIN, text_y, label_width,
+            PANEL_LIST_FONT, PANEL_TEXT_COLOR);
+    } else {
+        text_draw_ellipsized(item->label, x + PANEL_LIST_TEXT_MARGIN, text_y, label_width,
+            PANEL_LIST_FONT, PANEL_TEXT_COLOR);
+    }
 }
 
-int widget_sidebar_city_is_in_panel_list(const mouse *m)
+panel_list_action widget_sidebar_city_handle_panel_list(const mouse *m, generic_button *buttons,
+    unsigned int count, unsigned int *focus_button_id)
 {
-    return is_in_rect(m, PANEL_MARGIN, get_panel_list_top(), get_panel_list_width(),
-        second_screen_height() - PANEL_MARGIN - get_panel_list_top());
+    if (m->left.went_up && is_in_rect(m, PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(), PANEL_LIST_ROW_HEIGHT)) {
+        return PANEL_LIST_BACK;
+    }
+    if (generic_buttons_handle_mouse(m, 0, 0, buttons, count, focus_button_id)) {
+        return PANEL_LIST_NO_ACTION;
+    }
+    int list_top = get_panel_list_top();
+    int is_in_list = is_in_rect(m, PANEL_MARGIN, list_top, get_panel_list_width(),
+        second_screen_height() - PANEL_MARGIN - list_top);
+    return m->left.went_up && !is_in_list ? PANEL_LIST_OUTSIDE : PANEL_LIST_NO_ACTION;
 }
 
 int widget_sidebar_city_handle_mouse_build_menu(const mouse *m)
@@ -650,6 +682,11 @@ static void button_rotate(int clockwise, int param2)
         game_orientation_rotate_left();
     }
     window_invalidate();
+}
+
+static void button_panel_overlay(const generic_button *button)
+{
+    window_overlay_menu_show();
 }
 
 static void button_toggle_pause(int param1, int param2)

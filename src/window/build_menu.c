@@ -26,7 +26,6 @@
 #include "translation/translation.h"
 #include "widget/city/city.h"
 #include "widget/sidebar/city.h"
-#include "widget/sidebar/common.h"
 #include "window/city.h"
 
 #define MENU_X_OFFSET 298
@@ -44,15 +43,12 @@
 #define MENU_ITEM_MONEY_OFFSET 88
 
 #define TOOLTIP_TEXT_LENGTH 1000
-#define MAX_PANEL_ITEMS 30
-#define PANEL_TEXT_MARGIN 6
+#define NUMBER_TEXT_LENGTH 16
 
 static uint8_t tooltip_text[TOOLTIP_TEXT_LENGTH];
 
 static void button_menu_index(const generic_button *button);
 static void button_menu_item(int item);
-
-static generic_button panel_buttons[MAX_PANEL_ITEMS];
 
 static generic_button build_menu_buttons[] = {
     {0, 0, 290, 20, button_menu_index, 0, 1},
@@ -86,6 +82,8 @@ static generic_button build_menu_buttons[] = {
     {0, 672, 290, 20, button_menu_index, 0, 29},
     {0, 696, 290, 20, button_menu_index, 0, 30},
 };
+
+static generic_button panel_buttons[sizeof(build_menu_buttons) / sizeof(build_menu_buttons[0])];
 
 static const int Y_MENU_OFFSETS[] = {
     0, 322, 306, 274, 258, 226, 210, 178, 162, 130, 114,
@@ -179,8 +177,9 @@ static void draw_background(void)
 
 static int get_sidebar_x_offset(void)
 {
-    return city_view_is_sidebar_collapsed() ?
-        sidebar_common_get_x_offset_collapsed() : sidebar_common_get_x_offset_expanded();
+    int view_x, view_y, view_width, view_height;
+    city_view_get_viewport(&view_x, &view_y, &view_width, &view_height);
+    return view_x + view_width;
 }
 
 static int is_auto_cycle_button(building_type type)
@@ -343,53 +342,37 @@ static void draw_menu_buttons(void)
     }
 }
 
-static void draw_panel_item_value(building_type type, int x, int y, int width, int height, int *text_width)
+static const uint8_t *get_panel_item_value(building_type type, uint8_t *number_text)
 {
-    font_t font = widget_sidebar_city_get_panel_list_font();
-    color_t color = widget_sidebar_city_get_panel_text_color();
-    int text_y = widget_sidebar_city_get_panel_list_text_y(y, height);
     if (is_auto_cycle_button(type)) {
-        int state_text = 5 - building_construction_is_auto_cycling(selected_auto_cycle_group());
-        int state_width = lang_text_get_width(18, state_text, font);
-        lang_text_draw_colored(18, state_text, x + width - PANEL_TEXT_MARGIN - state_width, text_y, font, color);
-        *text_width -= state_width + PANEL_TEXT_MARGIN;
-        return;
+        return lang_get_string(18, 5 - building_construction_is_auto_cycling(selected_auto_cycle_group()));
     }
     int cost = get_menu_item_cost(type);
-    if (cost) {
-        int cost_width = text_get_number_width(cost, '@', "", font);
-        text_draw_number(cost, '@', "", x + width - PANEL_TEXT_MARGIN - cost_width, text_y, font, color);
-        *text_width -= cost_width + PANEL_TEXT_MARGIN;
-    } else {
-        *text_width -= widget_sidebar_city_draw_panel_list_arrow(x, y, width, height);
+    if (!cost) {
+        return 0;
     }
+    string_from_int(number_text, cost, 0);
+    return number_text;
 }
 
 static void draw_panel_menu(void)
 {
     widget_sidebar_city_draw_panel_list_frame();
     int item_index = -1;
-    for (unsigned int i = 0; i < data.num_items && i < MAX_PANEL_ITEMS; i++) {
+    for (unsigned int i = 0; i < data.num_items; i++) {
         item_index = building_menu_next_index(data.selected_submenu, item_index);
         building_type type = building_menu_type(data.selected_submenu, item_index);
-        int x, y, width, height;
-        widget_sidebar_city_get_panel_list_item(i, data.num_items, &x, &y, &width, &height);
-        panel_buttons[i] = (generic_button) {
-            .x = (short) x,
-            .y = (short) y,
-            .width = (short) width,
-            .height = (short) height,
-            .left_click_handler = button_menu_index,
-            .parameter1 = i + 1,
+        uint8_t number_text[NUMBER_TEXT_LENGTH];
+        const uint8_t *value = get_panel_item_value(type, number_text);
+        panel_list_item item = {
+            .label = is_auto_cycle_button(type) ? translation_for(TR_AUTO_CYCLE_TEMPLES) : get_menu_item_name(type),
+            .value = value,
+            .has_submenu = !value,
+            .is_highlighted = data.focus_button_id == i + 1
         };
-        widget_sidebar_city_draw_panel_list_row(x, y, width, height, data.focus_button_id == i + 1);
-        int text_y = widget_sidebar_city_get_panel_list_text_y(y, height);
-        int text_width = width - 2 * PANEL_TEXT_MARGIN;
-        draw_panel_item_value(type, x, y, width, height, &text_width);
-        const uint8_t *name = is_auto_cycle_button(type) ? translation_for(TR_AUTO_CYCLE_TEMPLES) :
-            get_menu_item_name(type);
-        text_draw_ellipsized(name, x + PANEL_TEXT_MARGIN, text_y, text_width,
-            widget_sidebar_city_get_panel_list_font(), widget_sidebar_city_get_panel_text_color());
+        panel_buttons[i].left_click_handler = button_menu_index;
+        panel_buttons[i].parameter1 = i + 1;
+        widget_sidebar_city_draw_panel_list_item(i, data.num_items, &item, &panel_buttons[i]);
     }
 }
 
@@ -437,33 +420,30 @@ static int handle_input_build_menu_index(const hotkeys *h)
     return 0;
 }
 
-static int handle_menu_mouse(const mouse *m)
-{
-    return handle_build_submenu(m) || widget_sidebar_city_handle_mouse_build_menu(m);
-}
-
 static void handle_input(const mouse *m, const hotkeys *h)
 {
-    int is_menu_on_main_screen = !second_screen_is_active();
-    if ((is_menu_on_main_screen && handle_menu_mouse(m)) || handle_input_build_menu_index(h)) {
+    if (second_screen_is_active()) {
+        if (!handle_input_build_menu_index(h) && (input_go_back_requested(m, h) || m->left.went_up)) {
+            window_build_menu_hide();
+        }
         return;
     }
-    int clicked_outside_menu = is_menu_on_main_screen ?
-        click_outside_menu(m, get_sidebar_x_offset()) : m->left.went_up;
-    if (input_go_back_requested(m, h) || clicked_outside_menu) {
-        window_build_menu_hide();
+    if (handle_build_submenu(m) ||
+        widget_sidebar_city_handle_mouse_build_menu(m) ||
+        handle_input_build_menu_index(h)) {
+        return;
+    }
+    if (input_go_back_requested(m, h) || click_outside_menu(m, get_sidebar_x_offset())) {
+        data.selected_submenu = SUBMENU_NONE;
+        window_city_show();
+        return;
     }
 }
 
 static void handle_second_screen_input(const mouse *m)
 {
-    if (widget_sidebar_city_panel_list_back_clicked(m)) {
-        window_build_menu_hide();
-        return;
-    }
-    unsigned int num_buttons = data.num_items < MAX_PANEL_ITEMS ? data.num_items : MAX_PANEL_ITEMS;
-    int handled = generic_buttons_handle_mouse(m, 0, 0, panel_buttons, num_buttons, &data.focus_button_id);
-    if (!handled && m->left.went_up && !widget_sidebar_city_is_in_panel_list(m)) {
+    if (widget_sidebar_city_handle_panel_list(m, panel_buttons, data.num_items, &data.focus_button_id) !=
+        PANEL_LIST_NO_ACTION) {
         window_build_menu_hide();
     }
 }

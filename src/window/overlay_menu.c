@@ -17,7 +17,6 @@
 #include "input/input.h"
 #include "translation/translation.h"
 #include "widget/sidebar/city.h"
-#include "widget/sidebar/common.h"
 #include "window/city.h"
 
 #include <stdlib.h>
@@ -328,8 +327,9 @@ static void draw_background(void)
 
 static int get_sidebar_x_offset(void)
 {
-    return city_view_is_sidebar_collapsed() ?
-        sidebar_common_get_x_offset_collapsed() : sidebar_common_get_x_offset_expanded();
+    int view_x, view_y, view_width, view_height;
+    city_view_get_viewport(&view_x, &view_y, &view_width, &view_height);
+    return view_x + view_width;
 }
 
 static int is_mouse_hovering(const overlay_menu_entry *entry)
@@ -509,41 +509,21 @@ static int count_entries(const overlay_menu_entry *entries)
     return count;
 }
 
-static void draw_panel_item_text(const uint8_t *text, int x, int y, int width)
-{
-    font_t font = widget_sidebar_city_get_panel_list_font();
-    color_t color = widget_sidebar_city_get_panel_text_color();
-    if (text_get_width(text, font) <= width) {
-        text_draw_centered(text, x, y, width, font, color);
-    } else {
-        text_draw_ellipsized(text, x, y, width, font, color);
-    }
-}
-
 static void draw_panel_menu(void)
 {
     widget_sidebar_city_draw_panel_list_frame();
     const overlay_menu_entry *entries = panel.levels[panel.depth];
     panel.num_buttons = count_entries(entries);
     for (int i = 0; i < panel.num_buttons; i++) {
-        int x, y, width, height;
-        widget_sidebar_city_get_panel_list_item(i, panel.num_buttons, &x, &y, &width, &height);
-        panel.buttons[i] = (generic_button) {
-            .x = (short) x,
-            .y = (short) y,
-            .width = (short) width,
-            .height = (short) height,
-            .left_click_handler = button_panel_item,
-            .parameter1 = i,
+        panel_list_item item = {
+            .label = get_overlay_text(&entries[i]),
+            .has_submenu = entries[i].submenu != 0,
+            .is_label_centered = 1,
+            .is_highlighted = panel.focus_button_id == i + 1 || game_state_overlay() == entries[i].overlay
         };
-        int is_highlighted = panel.focus_button_id == i + 1 || game_state_overlay() == entries[i].overlay;
-        widget_sidebar_city_draw_panel_list_row(x, y, width, height, is_highlighted);
-        int text_width = width - 8;
-        if (entries[i].submenu) {
-            text_width -= widget_sidebar_city_draw_panel_list_arrow(x, y, width, height);
-        }
-        draw_panel_item_text(get_overlay_text(&entries[i]), x + 4, widget_sidebar_city_get_panel_list_text_y(y, height),
-            text_width);
+        panel.buttons[i].left_click_handler = button_panel_item;
+        panel.buttons[i].parameter1 = i;
+        widget_sidebar_city_draw_panel_list_item(i, panel.num_buttons, &item, &panel.buttons[i]);
     }
 }
 
@@ -575,8 +555,14 @@ static void close_menu(void)
     window_city_show();
 }
 
-static void handle_menu_mouse(const mouse *m)
+static void handle_input(const mouse *m, const hotkeys *h)
 {
+    if (second_screen_is_active()) {
+        if (m->left.went_up || input_go_back_requested(m, h)) {
+            close_menu();
+        }
+        return;
+    }
     const int x_offset = get_sidebar_x_offset();
     int handled = 0;
 
@@ -598,31 +584,22 @@ static void handle_menu_mouse(const mouse *m)
     }
 }
 
-static void handle_panel_mouse(const mouse *m)
+static void handle_second_screen_input(const mouse *m)
 {
-    if (widget_sidebar_city_panel_list_back_clicked(m)) {
-        if (panel.depth > 0) {
-            panel.depth--;
-            panel.focus_button_id = 0;
-        } else {
+    switch (widget_sidebar_city_handle_panel_list(m, panel.buttons, panel.num_buttons, &panel.focus_button_id)) {
+        case PANEL_LIST_BACK:
+            if (panel.depth > 0) {
+                panel.depth--;
+                panel.focus_button_id = 0;
+            } else {
+                close_menu();
+            }
+            break;
+        case PANEL_LIST_OUTSIDE:
             close_menu();
-        }
-        return;
-    }
-    int handled = generic_buttons_handle_mouse(m, 0, 0, panel.buttons, panel.num_buttons, &panel.focus_button_id);
-    if (!handled && m->left.went_up && !widget_sidebar_city_is_in_panel_list(m)) {
-        close_menu();
-    }
-}
-
-static void handle_input(const mouse *m, const hotkeys *h)
-{
-    if (!second_screen_is_active()) {
-        handle_menu_mouse(m);
-    } else if (m->left.went_up || input_go_back_requested(m, h)) {
-        close_menu();
-    } else if (!data.show_menu) {
-        show_menu();
+            break;
+        default:
+            break;
     }
 }
 
@@ -749,7 +726,7 @@ static void button_panel_item(const generic_button *button)
 void window_overlay_menu_show(void)
 {
     const window_type window = {
-        WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input, 0, 0, handle_panel_mouse
+        WINDOW_OVERLAY_MENU, draw_background, draw_foreground, handle_input, 0, 0, handle_second_screen_input
     };
     data.clicked_menu_item = NO_ITEM;
     panel.levels[0] = overlay_menu;

@@ -148,6 +148,7 @@ static const char *ini_keys[] = {
     [CONFIG_UI_SHOW_OUTSKIRTS_DESIRABILITY] = "ui_show_outskirts_desirability",
     [CONFIG_UI_SCROLL_LEGACY_SCROLLBAR] = "ui_scroll_old_scroll", // keep comma after last entry please
     [CONFIG_FIX_EMPIRE_MAP_DIMENSIONS] = "fix_empire_map_dimensions",
+    [CONFIG_UI_MESSAGES_ON_SECOND_SCREEN] = "ui_messages_on_second_screen",
 };
 
 static const char *ini_string_keys[] = {
@@ -227,6 +228,7 @@ static int default_values[CONFIG_MAX_ENTRIES] = {
     [CONFIG_UI_SCROLL_CAMERA_UNLOCKED] = 1,
     [CONFIG_UI_SCROLL_LEGACY_SCROLLBAR] = 0,
     [CONFIG_FIX_EMPIRE_MAP_DIMENSIONS] = 0,//keep the comma after last entry please
+    [CONFIG_UI_MESSAGES_ON_SECOND_SCREEN] = 1,
 };
 
 static const char default_string_values[CONFIG_STRING_MAX_ENTRIES][CONFIG_STRING_VALUE_MAX] = { 0 };

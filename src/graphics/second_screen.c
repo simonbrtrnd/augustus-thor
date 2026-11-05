@@ -1,6 +1,7 @@
 #include "second_screen.h"
 
 #include "city/view.h"
+#include "core/config.h"
 #include "graphics/graphics.h"
 #include "graphics/panel.h"
 #include "graphics/renderer.h"
@@ -111,7 +112,7 @@ static float get_scale_to_fit(int width, int height)
 
 int second_screen_draw_dialog_background(int width, int height, void (*draw)(void))
 {
-    if (!begin_background(get_scale_to_fit(width, height))) {
+    if (!config_get(CONFIG_UI_MESSAGES_ON_SECOND_SCREEN) || !begin_background(get_scale_to_fit(width, height))) {
         return 0;
     }
     second_screen_draw_marble_background();

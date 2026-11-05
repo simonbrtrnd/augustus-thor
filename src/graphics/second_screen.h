@@ -41,8 +41,9 @@ int second_screen_draw(void (*draw)(void));
 int second_screen_draw_background(void (*draw)(void));
 
 /**
- * Same as second_screen_draw_background, over a marble background, at the scale where a dialog
- * of the given size in game pixels fills the second screen.
+ * Same as second_screen_draw_background, over a marble background, at the scale where
+ * a dialog of the given size in game pixels fills the second screen.
+ * Returns 0 without drawing when the player keeps the messages on the main screen.
  */
 int second_screen_draw_dialog_background(int width, int height, void (*draw)(void));
 

@@ -376,7 +376,9 @@ static void handle_input(const mouse *m, const hotkeys *h)
 static void handle_second_screen_input(const mouse *m)
 {
     static const hotkeys no_hotkeys;
-    handle_dialog_input(m, &no_hotkeys);
+    if (data.is_on_second_screen) {
+        handle_dialog_input(m, &no_hotkeys);
+    }
 }
 
 static void on_scroll(void)

@@ -141,21 +141,18 @@ static int has_texture_size(SDL_Texture *texture, int width, int height)
     return texture_width == width && texture_height == height;
 }
 
-static int begin_second_screen_drawing(int width, int height, int pixel_scale)
+static int begin_second_screen_drawing(int width, int height, float pixel_scale)
 {
     if (data.paused || !data.render_texture) {
         return 0;
     }
-    int texture_width = width * pixel_scale;
-    int texture_height = height * pixel_scale;
-    if (data.second_screen_texture &&
-        !has_texture_size(data.second_screen_texture, texture_width, texture_height)) {
+    if (data.second_screen_texture && !has_texture_size(data.second_screen_texture, width, height)) {
         SDL_DestroyTexture(data.second_screen_texture);
         data.second_screen_texture = 0;
     }
     if (!data.second_screen_texture) {
         data.second_screen_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ABGR8888,
-            SDL_TEXTUREACCESS_TARGET, texture_width, texture_height);
+            SDL_TEXTUREACCESS_TARGET, width, height);
         if (!data.second_screen_texture) {
             return 0;
         }
@@ -163,7 +160,7 @@ static int begin_second_screen_drawing(int width, int height, int pixel_scale)
     if (SDL_SetRenderTarget(data.renderer, data.second_screen_texture) != 0) {
         return 0;
     }
-    SDL_RenderSetScale(data.renderer, (float) pixel_scale, (float) pixel_scale);
+    SDL_RenderSetScale(data.renderer, pixel_scale, pixel_scale);
     data.is_drawing_second_screen = 1;
     return 1;
 }

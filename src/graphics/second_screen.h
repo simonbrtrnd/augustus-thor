@@ -17,11 +17,6 @@ int second_screen_width(void);
 int second_screen_height(void);
 
 /**
- * The number of screen pixels per game pixel of the content shown on the second screen.
- */
-int second_screen_pixel_scale(void);
-
-/**
  * Whether the game is drawing on the second screen or handling its input.
  * While it is, the screen size and the dialog offset are those of the second screen.
  */
@@ -46,10 +41,10 @@ int second_screen_draw(void (*draw)(void));
 int second_screen_draw_background(void (*draw)(void));
 
 /**
- * Same as second_screen_draw_background, at a scale where a 640x480 dialog fits,
- * over a marble background.
+ * Same as second_screen_draw_background, over a marble background, at the scale where a dialog
+ * of the given size in game pixels fills the second screen.
  */
-int second_screen_draw_dialog_background(void (*draw)(void));
+int second_screen_draw_dialog_background(int width, int height, void (*draw)(void));
 
 void second_screen_draw_marble_background(void);
 

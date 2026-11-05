@@ -720,7 +720,11 @@ static void draw_background(void)
     } else {
         window_draw_underlying_window();
     }
-    data.is_on_second_screen = second_screen_draw_dialog_background(draw_dialog_background);
+    const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
+    int width_blocks = data.show_video ? VIDEO_MESSAGE_WIDTH_BLOCKS : msg->width_blocks;
+    int height_blocks = data.show_video ? VIDEO_MESSAGE_HEIGHT_BLOCKS : msg->height_blocks;
+    data.is_on_second_screen = second_screen_draw_dialog_background(BLOCK_SIZE * width_blocks,
+        BLOCK_SIZE * height_blocks, draw_dialog_background);
     if (!data.is_on_second_screen) {
         draw_dialog_background();
     }

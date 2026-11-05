@@ -96,7 +96,7 @@ typedef struct {
 
     void (*update_scale)(int city_scale);
 
-    int (*begin_second_screen_drawing)(int width, int height, int pixel_scale);
+    int (*begin_second_screen_drawing)(int width, int height, float pixel_scale);
     void (*end_second_screen_drawing)(void);
     int (*save_second_screen_buffer)(color_t *pixels, int x, int y, int width, int height, int row_width);
 } graphics_renderer_interface;

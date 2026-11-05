@@ -7,13 +7,15 @@
 #include "graphics/screen.h"
 #include "graphics/window.h"
 
-#define PANEL_PIXEL_SCALE 4
-#define DIALOG_PIXEL_SCALE 2
+#include <math.h>
+
+#define PANEL_PIXEL_SCALE 4.0f
+#define DIALOG_MARGIN 8
 
 static struct {
     int screen_width;
     int screen_height;
-    int pixel_scale;
+    float pixel_scale;
     int has_content;
     int is_current;
 } data = { .pixel_scale = PANEL_PIXEL_SCALE };
@@ -25,17 +27,12 @@ int second_screen_is_active(void)
 
 int second_screen_width(void)
 {
-    return data.screen_width / data.pixel_scale;
+    return (int) (data.screen_width / data.pixel_scale);
 }
 
 int second_screen_height(void)
 {
-    return data.screen_height / data.pixel_scale;
-}
-
-int second_screen_pixel_scale(void)
-{
-    return data.pixel_scale;
+    return (int) (data.screen_height / data.pixel_scale);
 }
 
 int second_screen_is_current(void)
@@ -55,14 +52,14 @@ void second_screen_set_size(int width, int height)
     window_invalidate();
 }
 
-static int begin_drawing(int pixel_scale)
+static int begin_drawing(float pixel_scale)
 {
     const graphics_renderer_interface *renderer = graphics_renderer();
     if (!second_screen_is_active() || !renderer->begin_second_screen_drawing) {
         return 0;
     }
     data.pixel_scale = pixel_scale;
-    if (!renderer->begin_second_screen_drawing(second_screen_width(), second_screen_height(), pixel_scale)) {
+    if (!renderer->begin_second_screen_drawing(data.screen_width, data.screen_height, pixel_scale)) {
         return 0;
     }
     data.is_current = 1;
@@ -75,7 +72,7 @@ static void end_drawing(void)
     graphics_renderer()->end_second_screen_drawing();
 }
 
-static int begin_background(int pixel_scale)
+static int begin_background(float pixel_scale)
 {
     data.has_content = 0;
     if (!begin_drawing(pixel_scale)) {
@@ -106,9 +103,15 @@ int second_screen_draw_background(void (*draw)(void))
     return 1;
 }
 
-int second_screen_draw_dialog_background(void (*draw)(void))
+static float get_scale_to_fit(int width, int height)
 {
-    if (!begin_background(DIALOG_PIXEL_SCALE)) {
+    return fminf((float) data.screen_width / (width + 2 * DIALOG_MARGIN),
+        (float) data.screen_height / (height + 2 * DIALOG_MARGIN));
+}
+
+int second_screen_draw_dialog_background(int width, int height, void (*draw)(void))
+{
+    if (!begin_background(get_scale_to_fit(width, height))) {
         return 0;
     }
     second_screen_draw_marble_background();

@@ -217,7 +217,8 @@ static void draw_background(void)
     data.y_text = 112;
     data.text_width_blocks = data.width_blocks - 4;
     data.text_height_blocks = data.height_blocks - 9;
-    data.is_on_second_screen = second_screen_draw_dialog_background(draw_dialog_background);
+    data.is_on_second_screen = second_screen_draw_dialog_background(BLOCK_SIZE * data.width_blocks,
+        BLOCK_SIZE * data.height_blocks + 2 * PANEL_TOP, draw_dialog_background);
     if (!data.is_on_second_screen) {
         draw_dialog_background();
     }

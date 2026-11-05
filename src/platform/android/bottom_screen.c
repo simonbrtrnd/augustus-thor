@@ -84,12 +84,12 @@ static int reserve_canvas(int size)
 
 static int get_canvas_width(void)
 {
-    return second_screen_width() * second_screen_pixel_scale();
+    return data.width;
 }
 
 static int get_canvas_height(void)
 {
-    return second_screen_height() * second_screen_pixel_scale();
+    return data.height;
 }
 
 static int read_canvas(void)

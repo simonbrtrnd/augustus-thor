@@ -3,21 +3,31 @@
 #include "city/view.h"
 #include "city/warning.h"
 #include "graphics/renderer.h"
+#include "graphics/second_screen.h"
 #include "graphics/window.h"
+
+typedef struct {
+    int x;
+    int y;
+} dialog_offset;
 
 static struct {
     int width;
     int height;
-    struct {
-        int x;
-        int y;
-    } dialog_offset;
+    dialog_offset dialog_offset;
+    dialog_offset second_screen_dialog_offset;
 } data;
+
+static dialog_offset *get_dialog_offset(void)
+{
+    return second_screen_is_current() ? &data.second_screen_dialog_offset : &data.dialog_offset;
+}
 
 void screen_set_dialog_offset(int width, int height)
 {
-    data.dialog_offset.x = (data.width - width) / 2;
-    data.dialog_offset.y = (data.height - height) / 2;
+    dialog_offset *offset = get_dialog_offset();
+    offset->x = (screen_width() - width) / 2;
+    offset->y = (screen_height() - height) / 2;
 }
 
 void screen_set_resolution(int width, int height)
@@ -36,20 +46,20 @@ void screen_set_resolution(int width, int height)
 
 int screen_width(void)
 {
-    return data.width;
+    return second_screen_is_current() ? second_screen_width() : data.width;
 }
 
 int screen_height(void)
 {
-    return data.height;
+    return second_screen_is_current() ? second_screen_height() : data.height;
 }
 
 int screen_dialog_offset_x(void)
 {
-    return data.dialog_offset.x;
+    return get_dialog_offset()->x;
 }
 
 int screen_dialog_offset_y(void)
 {
-    return data.dialog_offset.y;
+    return get_dialog_offset()->y;
 }

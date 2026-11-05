@@ -107,6 +107,7 @@ static struct {
     message_filter type_displayed;
     int message_count;
     int *filtered_message_list;
+    int is_on_second_screen;
 } data;
 
 static void draw_message_type_button(int x, int y, int focused)
@@ -180,16 +181,8 @@ static void enter_dialog(void)
     }
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_city_draw_all();
-
-    data.width_blocks = 30;
-    data.height_blocks = 22;
-    data.x_text = 16;
-    data.y_text = 112;
-    data.text_width_blocks = data.width_blocks - 4;
-    data.text_height_blocks = data.height_blocks - 9;
     enter_dialog();
 
     outer_panel_draw(0, PANEL_TOP, data.width_blocks, data.height_blocks);
@@ -212,6 +205,22 @@ static void draw_background(void)
             BLOCK_SIZE * data.text_width_blocks - 48, FONT_NORMAL_GREEN);
     }
     graphics_reset_dialog();
+}
+
+static void draw_background(void)
+{
+    window_city_draw_all();
+
+    data.width_blocks = 30;
+    data.height_blocks = 22;
+    data.x_text = 16;
+    data.y_text = 112;
+    data.text_width_blocks = data.width_blocks - 4;
+    data.text_height_blocks = data.height_blocks - 9;
+    data.is_on_second_screen = second_screen_draw_dialog_background(draw_dialog_background);
+    if (!data.is_on_second_screen) {
+        draw_dialog_background();
+    }
 }
 
 static void draw_messages(unsigned int total_messages)
@@ -259,7 +268,7 @@ static void draw_messages(unsigned int total_messages)
     scrollbar_draw(&scrollbar);
 }
 
-static void draw_foreground(void)
+static void draw_dialog_foreground(void)
 {
     enter_dialog();
 
@@ -283,7 +292,16 @@ static void draw_foreground(void)
     graphics_reset_dialog();
 }
 
-static void handle_input(const mouse *m, const hotkeys *h)
+static void draw_foreground(void)
+{
+    if (data.is_on_second_screen) {
+        second_screen_draw(draw_dialog_foreground);
+    } else {
+        draw_dialog_foreground();
+    }
+}
+
+static void handle_dialog_input(const mouse *m, const hotkeys *h)
 {
     const mouse *m_dialog = mouse_in_dialog(m);
     unsigned int old_button_id = data.focus_button_id;
@@ -340,6 +358,24 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (!handled && input_go_back_requested(m, h)) {
         button_close(0, 0);
     }
+}
+
+static void handle_input(const mouse *m, const hotkeys *h)
+{
+    if (!data.is_on_second_screen) {
+        handle_dialog_input(m, h);
+        return;
+    }
+    data.focus_button_id = 0;
+    if (input_go_back_requested(m, h)) {
+        button_close(0, 0);
+    }
+}
+
+static void handle_second_screen_input(const mouse *m)
+{
+    static const hotkeys no_hotkeys;
+    handle_dialog_input(m, &no_hotkeys);
 }
 
 static void on_scroll(void)
@@ -462,7 +498,9 @@ void window_message_list_show(void)
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        handle_second_screen_input
     };
     init();
     window_show(&window);

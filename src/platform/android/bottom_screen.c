@@ -5,7 +5,6 @@
 #include "graphics/color.h"
 #include "graphics/renderer.h"
 #include "graphics/second_screen.h"
-#include "graphics/window.h"
 #include "input/mouse.h"
 
 #include <android/native_window_jni.h>
@@ -15,9 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PIXEL_SCALE 4
 #define MAX_PENDING_TOUCHES 32
 #define WINDOW_BLACK 0xff000000
+#define DRAG_SCROLL_STEP 48
 
 enum {
     MOTION_ACTION_DOWN = 0,
@@ -53,6 +52,11 @@ static struct {
     window_content shown;
 } data = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
+static struct {
+    int anchor_y;
+    int has_scrolled;
+} drag;
+
 static uint32_t to_window_pixel(color_t color)
 {
     return (color & 0xff00ff00) | ((color & 0xff) << 16) | ((color >> 16) & 0xff);
@@ -80,12 +84,12 @@ static int reserve_canvas(int size)
 
 static int get_canvas_width(void)
 {
-    return data.width * PIXEL_SCALE;
+    return second_screen_width() * second_screen_pixel_scale();
 }
 
 static int get_canvas_height(void)
 {
-    return data.height * PIXEL_SCALE;
+    return second_screen_height() * second_screen_pixel_scale();
 }
 
 static int read_canvas(void)
@@ -173,11 +177,11 @@ void android_bottom_screen_present(void)
     pthread_mutex_unlock(&data.lock);
 }
 
-static mouse to_screen_mouse(const touch_event *event, int width, int height)
+static mouse to_screen_mouse(const touch_event *event)
 {
     mouse m = { 0 };
-    m.x = (int) (event->x * width);
-    m.y = (int) (event->y * height);
+    m.x = (int) (event->x * second_screen_width());
+    m.y = (int) (event->y * second_screen_height());
     m.is_inside_window = 1;
     m.window_has_focus = 1;
     m.is_touch = 1;
@@ -198,6 +202,42 @@ static mouse to_screen_mouse(const touch_event *event, int width, int height)
     return m;
 }
 
+static void scroll_with_drag(const mouse *m)
+{
+    int distance = m->y - drag.anchor_y;
+    while (abs(distance) >= DRAG_SCROLL_STEP) {
+        int direction = distance < 0 ? -1 : 1;
+        mouse scroll = *m;
+        scroll.scrolled = direction < 0 ? SCROLL_DOWN : SCROLL_UP;
+        second_screen_handle_input(&scroll);
+        drag.anchor_y += direction * DRAG_SCROLL_STEP;
+        drag.has_scrolled = 1;
+        distance = m->y - drag.anchor_y;
+    }
+}
+
+static void handle_touch(const touch_event *event)
+{
+    mouse m = to_screen_mouse(event);
+    switch (event->action) {
+        case MOTION_ACTION_DOWN:
+            drag.anchor_y = m.y;
+            drag.has_scrolled = 0;
+            break;
+        case MOTION_ACTION_MOVE:
+            scroll_with_drag(&m);
+            break;
+        case MOTION_ACTION_UP:
+            if (drag.has_scrolled) {
+                m.left.went_up = 0;
+            }
+            break;
+        default:
+            break;
+    }
+    second_screen_handle_input(&m);
+}
+
 void android_bottom_screen_handle_input(void)
 {
     touch_event events[MAX_PENDING_TOUCHES];
@@ -211,10 +251,9 @@ void android_bottom_screen_handle_input(void)
     int has_window = data.window != 0;
     pthread_mutex_unlock(&data.lock);
 
-    second_screen_set_size(has_window ? width : 0, has_window ? height : 0, PIXEL_SCALE);
+    second_screen_set_size(has_window ? width : 0, has_window ? height : 0);
     for (int i = 0; i < count; i++) {
-        mouse m = to_screen_mouse(&events[i], width, height);
-        window_handle_second_screen_input(&m);
+        handle_touch(&events[i]);
     }
 }
 
@@ -231,8 +270,8 @@ JNIEXPORT void JNICALL Java_com_github_Keriew_augustus_BottomScreen_nativeSetSur
         ANativeWindow_release(data.window);
     }
     data.window = window;
-    data.width = (int) (surface_width / PIXEL_SCALE);
-    data.height = (int) (surface_height / PIXEL_SCALE);
+    data.width = surface_width;
+    data.height = surface_height;
     data.pending_count = 0;
     data.shown = SHOWING_NOTHING;
     pthread_mutex_unlock(&data.lock);

@@ -341,14 +341,6 @@ int widget_sidebar_city_handle_mouse(const mouse *m)
     return handled;
 }
 
-static void draw_panel_background(void)
-{
-    int width_blocks = (second_screen_width() + BLOCK_SIZE - 1) / BLOCK_SIZE + 2;
-    int height_blocks = (second_screen_height() + BLOCK_SIZE - 1) / BLOCK_SIZE + 2;
-    // The outer blocks hold the panel border, so they are placed outside the screen to leave only marble
-    outer_panel_draw(-BLOCK_SIZE, -BLOCK_SIZE, width_blocks, height_blocks);
-}
-
 static int get_button_image_id(const image_button *button)
 {
     if (button->assetlist_name) {
@@ -432,7 +424,7 @@ static void update_panel_buttons(void)
 
 void widget_sidebar_city_draw_panel(void)
 {
-    draw_panel_background();
+    second_screen_draw_marble_background();
     update_panel_buttons();
     widget_minimap_draw_decorated(PANEL_MARGIN + 1, PANEL_MARGIN + 1, PANEL_LEFT_COLUMN_WIDTH - 2,
         PANEL_MINIMAP_HEIGHT);
@@ -521,7 +513,7 @@ int widget_sidebar_city_draw_panel_list_arrow(int x, int y, int width, int heigh
 
 void widget_sidebar_city_draw_panel_list_frame(void)
 {
-    draw_panel_background();
+    second_screen_draw_marble_background();
     widget_sidebar_city_draw_panel_list_row(PANEL_MARGIN, PANEL_MARGIN, get_panel_list_width(),
         PANEL_LIST_ROW_HEIGHT, 0);
     lang_text_draw_centered_colored(12, 0, PANEL_MARGIN, widget_sidebar_city_get_panel_list_text_y(PANEL_MARGIN,

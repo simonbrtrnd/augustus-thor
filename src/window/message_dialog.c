@@ -119,6 +119,7 @@ static struct {
     int should_play_background_music;
     int background_image_id;
     time_millis time_message_displayed;
+    int is_on_second_screen;
 
     int x;
     int y;
@@ -697,6 +698,17 @@ static void draw_background_video(void)
     draw_foreground_video();
 }
 
+static void draw_dialog_background(void)
+{
+    graphics_in_dialog();
+    if (data.show_video) {
+        draw_background_video();
+    } else {
+        draw_background_normal();
+    }
+    graphics_reset_dialog();
+}
+
 static void draw_background(void)
 {
     data.x_text = 0;
@@ -708,13 +720,10 @@ static void draw_background(void)
     } else {
         window_draw_underlying_window();
     }
-    graphics_in_dialog();
-    if (data.show_video) {
-        draw_background_video();
-    } else {
-        draw_background_normal();
+    data.is_on_second_screen = second_screen_draw_dialog_background(draw_dialog_background);
+    if (!data.is_on_second_screen) {
+        draw_dialog_background();
     }
-    graphics_reset_dialog();
 }
 
 static image_button *get_advisor_button(void)
@@ -791,7 +800,7 @@ static void draw_foreground_video(void)
     }
 }
 
-static void draw_foreground(void)
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     if (data.show_video) {
@@ -800,6 +809,15 @@ static void draw_foreground(void)
         draw_foreground_normal();
     }
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    if (data.is_on_second_screen) {
+        second_screen_draw(draw_dialog_foreground);
+    } else {
+        draw_dialog_foreground();
+    }
 }
 
 static int handle_input_video(const mouse *m_dialog, const lang_message *msg, const hotkeys *h)
@@ -882,7 +900,7 @@ static int can_skip_popup(void)
     return 0;
 }
 
-static void handle_input(const mouse *m, const hotkeys *h)
+static void handle_dialog_input(const mouse *m, const hotkeys *h)
 {
     data.focus_button_id = 0;
     const mouse *m_dialog = mouse_in_dialog(m);
@@ -896,6 +914,24 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (!handled && input_go_back_requested(m, h) && can_skip_popup()) {
         button_close(0, 0);
     }
+}
+
+static void handle_input(const mouse *m, const hotkeys *h)
+{
+    if (!data.is_on_second_screen) {
+        handle_dialog_input(m, h);
+        return;
+    }
+    data.focus_button_id = 0;
+    if (input_go_back_requested(m, h) && can_skip_popup()) {
+        button_close(0, 0);
+    }
+}
+
+static void handle_second_screen_input(const mouse *m)
+{
+    static const hotkeys no_hotkeys;
+    handle_dialog_input(m, &no_hotkeys);
 }
 
 static void button_back(int param1, int param2)
@@ -982,7 +1018,9 @@ static void init_window(int text_id, int is_custom_message, void (*background_ca
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        handle_second_screen_input
     };
     init(text_id, is_custom_message, background_callback);
     window_show(&window);

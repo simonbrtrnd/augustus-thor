@@ -50,6 +50,9 @@ android {
         }
         externalNativeBuild {
             ndkBuild {
+                // A failed SDL assertion opens a message box that waits on the Android UI thread. A startup race
+                // in SDL's audio device hotplug then freezes the app, so debug builds keep the release level.
+                cFlags '-DSDL_ASSERT_LEVEL=1'
                 arguments 'SUPPORT_FLAC_DRFLAC=false',
                         'SUPPORT_WAVPACK=false',
                         'SUPPORT_GME=false'

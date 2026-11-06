@@ -675,12 +675,20 @@ static int translate_map_scrolling(void)
     return 1;
 }
 
+static int is_held_action(mapping_action action)
+{
+    return action == MAPPING_ACTION_ZOOM_IN || action == MAPPING_ACTION_ZOOM_OUT;
+}
+
 static int translate_hotkeys(void)
 {
     int handled = 0;
     for (int i = 0; i < MAX_HOTKEYS; ++i) {
         int value = get_joystick_input_for_action(HOTKEY_OFFSET + i, &data.joystick_hotkey[i]);
         handled |= value;
+        if (is_held_action(HOTKEY_OFFSET + i)) {
+            continue;
+        }
         if (value) {
             if (data.joystick_hotkey[i].state == INPUT_STATE_WENT_DOWN) {
                 hotkey_set_value_for_action(JOYSTICK_MAPPING_TO_HOTKEY_ACTION[i], 1);
@@ -709,6 +717,20 @@ static int translate_system_functions(void)
         return 1;
     }
     return 0;
+}
+
+static int is_action_down(mapping_action action)
+{
+    input_state state = data.joystick_hotkey[action - HOTKEY_OFFSET].state;
+    return state == INPUT_STATE_WENT_DOWN || state == INPUT_STATE_IS_DOWN;
+}
+
+int joystick_get_held_zoom(void)
+{
+    if (data.connected_joysticks == 0) {
+        return 0;
+    }
+    return is_action_down(MAPPING_ACTION_ZOOM_OUT) - is_action_down(MAPPING_ACTION_ZOOM_IN);
 }
 
 int joystick_to_mouse_and_keyboard(void)

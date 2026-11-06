@@ -93,6 +93,11 @@ void joystick_update_element(int joystick_id, joystick_element element, int elem
 
 int joystick_to_mouse_and_keyboard(void);
 
+/**
+ * Returns 1 while a controller holds zoom out, -1 while it holds zoom in, and 0 otherwise.
+ */
+int joystick_get_held_zoom(void);
+
 int joysticks_are_connected(void);
 
 #endif // INPUT_JOYSTICK_H

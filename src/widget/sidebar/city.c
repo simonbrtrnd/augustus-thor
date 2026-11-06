@@ -141,8 +141,8 @@ static image_button buttons_top_expanded[] = {
     {123, 184, 33, 22, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
-static const panel_area panel_date = {6, 6, 130, 27};
-static const panel_area panel_minimap = {6, 138, 130, 93};
+static const panel_area panel_date = {4, 4, 134, 31};
+static const panel_area panel_minimap = {4, 136, 134, 97};
 
 enum {
     PANEL_BUTTON_FUNDS,
@@ -154,48 +154,48 @@ enum {
 };
 
 static generic_button panel_text_buttons[PANEL_TEXT_BUTTONS] = {
-    [PANEL_BUTTON_FUNDS] = {142, 6, 78, 27, button_panel_advisor, 0, ADVISOR_FINANCIAL},
-    [PANEL_BUTTON_POPULATION] = {226, 6, 78, 27, button_panel_advisor, 0, ADVISOR_POPULATION},
-    [PANEL_BUTTON_RATINGS] = {6, 39, 130, 60, button_panel_advisor, 0, ADVISOR_RATINGS},
-    [PANEL_BUTTON_OVERLAY] = {6, 105, 130, 27, button_panel_overlay},
-    [PANEL_BUTTON_MENU] = {142, 39, 106, 27, button_panel_menu},
+    [PANEL_BUTTON_FUNDS] = {140, 4, 82, 31, button_panel_advisor, 0, ADVISOR_FINANCIAL},
+    [PANEL_BUTTON_POPULATION] = {224, 4, 82, 31, button_panel_advisor, 0, ADVISOR_POPULATION},
+    [PANEL_BUTTON_RATINGS] = {4, 37, 134, 64, button_panel_advisor, 0, ADVISOR_RATINGS},
+    [PANEL_BUTTON_OVERLAY] = {4, 103, 134, 31, button_panel_overlay},
+    [PANEL_BUTTON_MENU] = {140, 37, 110, 31, button_panel_menu},
 };
 
 static image_button panel_button_pause[] = {
-    {254, 39, 50, 27, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, "UI", "Pause Button"},
+    {252, 37, 54, 31, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, "UI", "Pause Button"},
 };
 
 static image_button panel_buttons_advisors_empire[] = {
-    {142, 72, 78, 27, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 0, button_panel_reports, button_none, 0, 0, 1},
-    {226, 72, 78, 27, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_none, 0, 0, 1},
+    {140, 70, 82, 31, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 0, button_panel_reports, button_none, 0, 0, 1},
+    {224, 70, 82, 31, IB_NORMAL, GROUP_SIDEBAR_ADVISORS_EMPIRE, 3, button_empire, button_none, 0, 0, 1},
 };
 
 static image_button panel_buttons_build[] = {
-    {142, 105, 50, 27, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 0, button_build, button_none, BUILD_MENU_VACANT_HOUSE, 0, 1},
-    {198, 105, 50, 27, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 8, button_build, button_none, BUILD_MENU_CLEAR_LAND, 0, 1},
-    {254, 105, 50, 27, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 12, button_build, button_none, BUILD_MENU_ROAD, 0, 1},
-    {142, 138, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 4, button_build, button_none, BUILD_MENU_WATER, 0, 1},
-    {198, 138, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 40, button_build, button_none, BUILD_MENU_HEALTH, 0, 1},
-    {254, 138, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 28, button_build, button_none, BUILD_MENU_TEMPLES, 0, 1},
-    {142, 171, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 24, button_build, button_none, BUILD_MENU_EDUCATION, 0, 1},
-    {198, 171, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 20, button_build, button_none, BUILD_MENU_ENTERTAINMENT, 0, 1},
-    {254, 171, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 16, button_build, button_none, BUILD_MENU_ADMINISTRATION, 0, 1},
-    {142, 204, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 44, button_build, button_none, BUILD_MENU_ENGINEERING, 0, 1},
-    {198, 204, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 36, button_build, button_none, BUILD_MENU_SECURITY, 0, 1},
-    {254, 204, 50, 27, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 32, button_build, button_none, BUILD_MENU_INDUSTRY, 0, 1},
+    {140, 103, 54, 31, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 0, button_build, button_none, BUILD_MENU_VACANT_HOUSE, 0, 1},
+    {196, 103, 54, 31, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 8, button_build, button_none, BUILD_MENU_CLEAR_LAND, 0, 1},
+    {252, 103, 54, 31, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 12, button_build, button_none, BUILD_MENU_ROAD, 0, 1},
+    {140, 136, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 4, button_build, button_none, BUILD_MENU_WATER, 0, 1},
+    {196, 136, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 40, button_build, button_none, BUILD_MENU_HEALTH, 0, 1},
+    {252, 136, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 28, button_build, button_none, BUILD_MENU_TEMPLES, 0, 1},
+    {140, 169, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 24, button_build, button_none, BUILD_MENU_EDUCATION, 0, 1},
+    {196, 169, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 20, button_build, button_none, BUILD_MENU_ENTERTAINMENT, 0, 1},
+    {252, 169, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 16, button_build, button_none, BUILD_MENU_ADMINISTRATION, 0, 1},
+    {140, 202, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 44, button_build, button_none, BUILD_MENU_ENGINEERING, 0, 1},
+    {196, 202, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 36, button_build, button_none, BUILD_MENU_SECURITY, 0, 1},
+    {252, 202, 54, 31, IB_BUILD, GROUP_SIDEBAR_BUTTONS, 32, button_build, button_none, BUILD_MENU_INDUSTRY, 0, 1},
 };
 
 static image_button panel_buttons_tools[] = {
-    {142, 237, 50, 27, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 48, button_undo, button_none, 0, 0, 1},
-    {198, 237, 50, 27, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_none, 0, 0, 1},
-    {254, 237, 50, 27, IB_BUILD, GROUP_MESSAGE_ICON, 22, button_go_to_problem, button_none, 0, 0, 1},
+    {140, 235, 54, 31, IB_NORMAL, GROUP_SIDEBAR_BUTTONS, 48, button_undo, button_none, 0, 0, 1},
+    {196, 235, 54, 31, IB_NORMAL, GROUP_MESSAGE_ICON, 18, button_messages, button_none, 0, 0, 1},
+    {252, 235, 54, 31, IB_BUILD, GROUP_MESSAGE_ICON, 22, button_go_to_problem, button_none, 0, 0, 1},
 };
 
 static image_button panel_buttons_views[] = {
-    {6, 237, 28, 27, IB_NORMAL, 0, 0, button_toggle_grid, button_none, 0, 0, 1, "UI", "Toggle Grid Button" },
-    {40, 237, 28, 27, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 3, button_rotate_north, button_none, 0, 0, 1},
-    {74, 237, 28, 27, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 6, button_rotate, button_none, 0, 0, 1},
-    {108, 237, 28, 27, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
+    {4, 235, 32, 31, IB_NORMAL, 0, 0, button_toggle_grid, button_none, 0, 0, 1, "UI", "Toggle Grid Button" },
+    {38, 235, 32, 31, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 3, button_rotate_north, button_none, 0, 0, 1},
+    {72, 235, 32, 31, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 6, button_rotate, button_none, 0, 0, 1},
+    {106, 235, 32, 31, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
 static struct {

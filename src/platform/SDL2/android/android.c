@@ -16,7 +16,8 @@ jobject jni_get_activity(void)
 
 void platform_show_virtual_keyboard(void)
 {
-    if (!SDL_IsTextInputActive()) {
+    // SDL starts with text input active but its keyboard hidden, so the keyboard's own state decides
+    if (!SDL_IsScreenKeyboardShown(SDL_GetKeyboardFocus())) {
         SDL_StartTextInput();
     }
 }

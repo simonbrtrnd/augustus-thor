@@ -9,7 +9,10 @@
 #include <math.h>
 
 #define ZOOM_STEP 2
-#define ZOOM_DELTA 25
+
+static const int ZOOM_LEVELS[] = { 50, 75, 100, 150, 200, 250, 300, 400, 500 };
+
+#define NUM_ZOOM_LEVELS (sizeof(ZOOM_LEVELS) / sizeof(ZOOM_LEVELS[0]))
 
 static struct {
     int delta;
@@ -69,6 +72,28 @@ static int get_y_in_viewport(int y)
     return y - y_offset;
 }
 
+static int get_next_zoom_level(int zoom, int is_zoom_out)
+{
+    int max = city_view_get_max_scale();
+    if (zoom > max) {
+        zoom = max;
+    }
+    if (is_zoom_out) {
+        for (unsigned int i = 0; i < NUM_ZOOM_LEVELS; i++) {
+            if (ZOOM_LEVELS[i] > zoom) {
+                return ZOOM_LEVELS[i] < max ? ZOOM_LEVELS[i] : max;
+            }
+        }
+        return max;
+    }
+    for (int i = NUM_ZOOM_LEVELS - 1; i >= 0; i--) {
+        if (ZOOM_LEVELS[i] < zoom) {
+            return ZOOM_LEVELS[i];
+        }
+    }
+    return zoom;
+}
+
 void zoom_map(const mouse *m, const hotkeys *h, int current_zoom)
 {
     if (data.touch.active || m->is_touch) {
@@ -82,18 +107,9 @@ void zoom_map(const mouse *m, const hotkeys *h, int current_zoom)
         return;
     }
     if (h->zoom_in || h->zoom_out) {
+        int target = data.restore ? 100 : current_zoom + data.delta;
         data.restore = 0;
-        int zoom_offset;
-        int zoom_delta;
-        if (h->zoom_out) {
-            zoom_offset = 0;
-            zoom_delta = ZOOM_DELTA;
-        } else {
-            zoom_offset = -1;
-            zoom_delta = -ZOOM_DELTA;
-        }
-        int multiplier = (current_zoom + zoom_offset) / 100 + 1;
-        data.delta = zoom_delta * multiplier;
+        data.delta = get_next_zoom_level(target, h->zoom_out) - current_zoom;
         if (config_get(CONFIG_UI_SMOOTH_SCROLLING)) {
             speed_clear(&data.step);
             speed_set_target(&data.step, ZOOM_STEP, SPEED_CHANGE_IMMEDIATE, 1);

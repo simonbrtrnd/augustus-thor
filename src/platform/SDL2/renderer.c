@@ -850,12 +850,18 @@ static int save_to_texture(int texture_id, int x, int y, int width, int height)
     }
 
     SDL_Rect former_viewport;
+    float former_scale_x, former_scale_y;
     SDL_RenderGetViewport(data.renderer, &former_viewport);
-    SDL_Rect src_rect = { x + former_viewport.x, y + former_viewport.y, width, height };
+    SDL_RenderGetScale(data.renderer, &former_scale_x, &former_scale_y);
+    SDL_Rect src_rect = {
+        (int) ((x + former_viewport.x) * former_scale_x), (int) ((y + former_viewport.y) * former_scale_y),
+        (int) (width * former_scale_x), (int) (height * former_scale_y)
+    };
     SDL_Rect dst_rect = { 0, 0, width, height };
     SDL_SetRenderTarget(data.renderer, texture);
     SDL_RenderCopy(data.renderer, former_target, &src_rect, &dst_rect);
     SDL_SetRenderTarget(data.renderer, former_target);
+    SDL_RenderSetScale(data.renderer, former_scale_x, former_scale_y);
     SDL_RenderSetViewport(data.renderer, &former_viewport);
 
     if (!texture_info) {
@@ -916,7 +922,9 @@ static void create_blend_texture(custom_image_type type)
     SDL_Texture *former_target = SDL_GetRenderTarget(data.renderer);
     SDL_Rect former_viewport;
     SDL_Rect former_clip;
+    float former_scale_x, former_scale_y;
     SDL_RenderGetViewport(data.renderer, &former_viewport);
+    SDL_RenderGetScale(data.renderer, &former_scale_x, &former_scale_y);
     SDL_RenderGetClipRect(data.renderer, &former_clip);
 
     SDL_SetRenderTarget(data.renderer, texture);
@@ -937,6 +945,7 @@ static void create_blend_texture(custom_image_type type)
     SDL_RenderCopy(data.renderer, flat_tile, &src_coords, 0);
 
     SDL_SetRenderTarget(data.renderer, former_target);
+    SDL_RenderSetScale(data.renderer, former_scale_x, former_scale_y);
     SDL_RenderSetViewport(data.renderer, &former_viewport);
     SDL_RenderSetClipRect(data.renderer, &former_clip);
 
@@ -974,7 +983,9 @@ static SDL_Texture *get_silhouette_texture(const image *img)
     SDL_Rect former_viewport;
     SDL_Rect former_clip;
     SDL_BlendMode former_blend_mode;
+    float former_scale_x, former_scale_y;
     SDL_RenderGetViewport(data.renderer, &former_viewport);
+    SDL_RenderGetScale(data.renderer, &former_scale_x, &former_scale_y);
     SDL_RenderGetClipRect(data.renderer, &former_clip);
     SDL_GetRenderDrawBlendMode(data.renderer, &former_blend_mode);
 
@@ -1013,6 +1024,7 @@ static SDL_Texture *get_silhouette_texture(const image *img)
     SDL_RenderReadPixels(data.renderer, 0, 0, surface->pixels, surface->pitch);
 
     SDL_SetRenderTarget(data.renderer, former_target);
+    SDL_RenderSetScale(data.renderer, former_scale_x, former_scale_y);
     SDL_RenderSetViewport(data.renderer, &former_viewport);
     SDL_RenderSetClipRect(data.renderer, &former_clip);
     SDL_SetRenderDrawBlendMode(data.renderer, former_blend_mode);

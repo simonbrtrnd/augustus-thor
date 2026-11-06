@@ -487,6 +487,8 @@ void video_draw(int x_offset, int y_offset, int width, int height)
     }
 
     float scale = 1.0f;
+    float x = (float) x_offset;
+    float y = (float) y_offset;
 
     if (data.video.width != width || data.video.height != height) {
         float scale_w = data.video.width / (float) width;
@@ -494,14 +496,14 @@ void video_draw(int x_offset, int y_offset, int width, int height)
         scale = scale_w > scale_h ? scale_w : scale_h;
 
         if (scale == scale_h) {
-            x_offset += (int) ((width - data.video.width / scale) / 2 * scale);
+            x += (width - data.video.width / scale) / 2;
         }
         if (scale == scale_w) {
-            y_offset += (int) ((height - data.video.height / scale) / 2 * scale);
+            y += (height - data.video.height / scale) / 2;
         }
     }
     // Only draw the video if it has frames to show, otherwise it may display garbage
     if (data.video.current_frame != 0) {
-        graphics_renderer()->draw_custom_image(CUSTOM_IMAGE_VIDEO, x_offset, y_offset, scale, 0);
+        graphics_renderer()->draw_custom_image(CUSTOM_IMAGE_VIDEO, (int) (x * scale), (int) (y * scale), scale, 0);
     }
 }

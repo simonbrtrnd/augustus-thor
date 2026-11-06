@@ -22,6 +22,7 @@
 #include "game/file_editor.h"
 #include "game/file_io.h"
 #include "game/save_version.h"
+#include "game/system.h"
 #include "graphics/button.h"
 #include "graphics/generic_button.h"
 #include "graphics/graphics.h"
@@ -30,6 +31,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/list_box.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -888,4 +890,8 @@ void window_file_dialog_show(file_type type, file_dialog_type dialog_type)
     };
     init(type, dialog_type);
     window_show(&window);
+    if (dialog_type == FILE_DIALOG_SAVE && second_screen_is_current()) {
+        // Android opens the keyboard on the screen touched last, so a save started below types there
+        system_keyboard_show();
+    }
 }

@@ -3,7 +3,9 @@
 #include "assets/assets.h"
 #include "building/menu.h"
 #include "core/config.h"
+#include "core/image.h"
 #include "graphics/image.h"
+#include "graphics/renderer.h"
 #include "sound/effect.h"
 
 #define PRESSED_EFFECT_MILLIS 100
@@ -64,8 +66,23 @@ void image_buttons_draw(int x, int y, image_button *buttons, unsigned int num_bu
         if (btn->dont_draw) {
             continue;
         }
-        image_draw(image_id, x + btn->x_offset, y + btn->y_offset, COLOR_MASK_NONE, SCALE_NONE);
+        if (btn->scale) {
+            graphics_renderer()->draw_image_advanced(image_get(image_id), x + btn->x_offset, y + btn->y_offset,
+                COLOR_MASK_NONE, 1.0f / btn->scale, 1.0f / btn->scale, 0.0, 1);
+        } else {
+            image_draw(image_id, x + btn->x_offset, y + btn->y_offset, COLOR_MASK_NONE, SCALE_NONE);
+        }
     }
+}
+
+int image_button_width(const image_button *button)
+{
+    return button->scale ? (int) (button->width * button->scale) : button->width;
+}
+
+int image_button_height(const image_button *button)
+{
+    return button->scale ? (int) (button->height * button->scale) : button->height;
 }
 
 static int should_be_pressed(const image_button *btn, const mouse *m)
@@ -97,9 +114,9 @@ int image_buttons_handle_mouse(
             btn->focused--;
         }
         if (x + btn->x_offset <= m->x &&
-            x + btn->x_offset + btn->width > m->x &&
+            x + btn->x_offset + image_button_width(btn) > m->x &&
             y + btn->y_offset <= m->y &&
-            y + btn->y_offset + btn->height > m->y) {
+            y + btn->y_offset + image_button_height(btn) > m->y) {
             if (focus_button_id) {
                 *focus_button_id = i + 1;
             }

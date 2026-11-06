@@ -88,6 +88,12 @@ int rich_text_draw_colored(const uint8_t *text, int x_offset, int y_offset,
 void rich_text_draw_scrollbar(void);
 
 /**
+ * Moves the scrollbar to the given x, after rich_text_init placed it right of the text
+ * @param x X offset
+ */
+void rich_text_set_scrollbar_x(int x);
+
+/**
  * Handles mouse interaction with the scrollbar and scroll wheel
  * @param m Mouse state
  * @return True if any interaction was handled

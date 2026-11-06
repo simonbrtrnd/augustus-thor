@@ -91,6 +91,11 @@ void rich_text_set_fonts(font_t normal_font, font_t heading_font, font_t link_fo
     data.paragraph_indent = locale_paragraph_indent();
 }
 
+void rich_text_set_scrollbar_x(int x)
+{
+    scrollbar.x = x;
+}
+
 void rich_text_reset(int scroll_position)
 {
     scrollbar_reset(&scrollbar, scroll_position);

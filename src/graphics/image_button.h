@@ -34,9 +34,20 @@ typedef struct {
     time_millis pressed_since;
     char dont_draw; // use for skipping buttons dynamically when drawing an array
     char static_image; // use for buttons that do not need handling of focused or pressed state
+    float scale; // optional, enlarges the drawn and clickable button from its top-left corner
 } image_button;
 
 void image_buttons_draw(int x, int y, image_button *buttons, unsigned int num_buttons);
+
+/**
+ * Width of the button as drawn, with its scale
+ */
+int image_button_width(const image_button *button);
+
+/**
+ * Height of the button as drawn, with its scale
+ */
+int image_button_height(const image_button *button);
 
 int image_buttons_handle_mouse(
     const mouse *m, int x, int y, image_button *buttons, unsigned int num_buttons, unsigned int *focus_button_id);

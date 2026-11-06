@@ -65,6 +65,7 @@ static struct {
         speed_type x;
         speed_type y;
         int decaying;
+        int follows_drag;
         float modifier_x;
         float modifier_y;
     } speed;
@@ -446,6 +447,7 @@ static int get_alignment_delta(speed_direction direction, int camera_max_offset,
 static int set_scroll_speed_from_input(const mouse* m, scroll_type type)
 {
     if (set_scroll_speed_from_drag()) {
+        data.speed.follows_drag = 1;
         return 1;
     }
     int direction = get_direction(m, 1);
@@ -455,6 +457,7 @@ static int set_scroll_speed_from_input(const mouse* m, scroll_type type)
         speed_set_target(&data.speed.y, 0, time, 1);
         return 0;
     }
+    data.speed.follows_drag = 0;
     if (data.speed.decaying) {
         clear_scroll_speed();
     }
@@ -512,6 +515,15 @@ int scroll_for_menu(const mouse *m)
     return get_direction(m, 0);
 }
 
+static int get_arrow_scroll_scale(void)
+{
+    int scale = city_view_get_scale();
+    if (scale <= 100) {
+        return scale;
+    }
+    return (int) (100 * sqrtf(scale / 100.0f));
+}
+
 int scroll_get_delta(const mouse* m, pixel_offset* delta, scroll_type type)
 {
     data.is_scrolling = set_scroll_speed_from_input(m, type);
@@ -522,7 +534,7 @@ int scroll_get_delta(const mouse* m, pixel_offset* delta, scroll_type type)
         data.is_scrolling = data.speed.decaying;
     }
     if (type == SCROLL_TYPE_CITY) {
-        int scale = city_view_get_scale();
+        int scale = data.speed.follows_drag ? city_view_get_scale() : get_arrow_scroll_scale();
         delta->x = calc_adjust_with_percentage(delta->x, scale);
         delta->y = calc_adjust_with_percentage(delta->y, scale);
     }

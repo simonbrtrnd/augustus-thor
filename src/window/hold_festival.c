@@ -14,6 +14,7 @@
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/window.h"
 #include "input/input.h"
 #include "window/advisors.h"
@@ -86,10 +87,8 @@ static void draw_buttons(void)
     image_draw(wine_image_id, 97 + width, 279, COLOR_MASK_NONE, SCALE_NONE);
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_advisors_draw_dialog_background();
-
     graphics_in_dialog();
 
     outer_panel_draw(48, 48, 34, 20);
@@ -113,12 +112,18 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
+static void draw_background(void)
+{
+    window_advisors_draw_dialog_background();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
 static int active_image_buttons(void)
 {
     return city_finance_out_of_money() ? 3 : 4;
 }
 
-static void draw_foreground(void)
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     if (!city_finance_out_of_money()) {
@@ -130,6 +135,11 @@ static void draw_foreground(void)
     }
     image_buttons_draw(0, 0, image_buttons_bottom, active_image_buttons());
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

@@ -121,6 +121,14 @@ static void update_input_before(void)
     hotkey_handle_global_keys();
 }
 
+static const mouse *get_go_back_mouse(void)
+{
+    const mouse *m = mouse_get();
+    static mouse go_back;
+    go_back = (mouse) { .x = -1, .y = -1, .right = m->right, .is_touch = m->is_touch };
+    return &go_back;
+}
+
 static void update_input_after(void)
 {
     reset_touches(0);
@@ -142,19 +150,31 @@ void window_draw(int force)
     }
     w->draw_foreground();
 
-    const mouse *m = mouse_get();
     const hotkeys *h = hotkey_state();
-    w->handle_input(m, h);
-    tooltip_handle(m, w->get_tooltip);
+    if (second_screen_has_dialog()) {
+        w->handle_input(get_go_back_mouse(), h);
+    } else {
+        const mouse *m = mouse_get();
+        w->handle_input(m, h);
+        tooltip_handle(m, w->get_tooltip);
+    }
     warning_draw();
     update_input_after();
 }
 
 void window_handle_second_screen_input(const mouse *m)
 {
+    static const hotkeys no_hotkeys;
     if (data.current_window->handle_second_screen_input) {
         data.current_window->handle_second_screen_input(m);
+    } else if (second_screen_has_dialog()) {
+        data.current_window->handle_input(m, &no_hotkeys);
     }
+}
+
+int window_is_drawing_underlying_window(void)
+{
+    return data.underlying_windows_redrawing > 0;
 }
 
 void window_draw_underlying_window(void)

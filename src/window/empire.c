@@ -33,6 +33,7 @@
 #include "graphics/panel.h"
 #include "graphics/screen.h"
 #include "graphics/scrollbar.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -54,6 +55,7 @@
 #include "window/trade_ledger.h"
 #include "window/trade_opened.h"
 #include "window/trade_prices.h"
+#include "widget/sidebar/city.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -1982,6 +1984,7 @@ static void draw_background(void)
         image_draw_blurred_fullscreen(image_group(GROUP_EMPIRE_MAP), 3);
         graphics_shade_rect(0, 0, screen_width(), screen_height(), 7);
     }
+    second_screen_draw_background(widget_sidebar_city_draw_panel_background);
 }
 
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
@@ -2476,6 +2479,7 @@ static void draw_foreground(void)
     draw_object_info();
     draw_panel_buttons();
     draw_trade_button_highlights();
+    second_screen_draw(widget_sidebar_city_draw_panel);
 }
 
 static void determine_selected_object(const mouse *m)
@@ -3285,7 +3289,9 @@ void window_empire_show(void)
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        widget_sidebar_city_handle_panel_mouse_over_window
     };
     window_show(&window);
 }

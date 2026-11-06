@@ -8,6 +8,7 @@
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -32,10 +33,8 @@ static void init(void)
     city_emperor_init_selected_gift();
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_advisors_draw_dialog_background();
-
     graphics_in_dialog();
 
     outer_panel_draw(96, 144, 30, 15);
@@ -49,7 +48,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_advisors_draw_dialog_background();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     int current_gift = city_emperor_selected_gift_size();
@@ -95,6 +100,11 @@ static void draw_foreground(void)
     button_border_draw(400, 336, 160, 20, focus_button_id == 5);
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

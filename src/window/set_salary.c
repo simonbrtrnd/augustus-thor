@@ -11,6 +11,7 @@
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -51,7 +52,7 @@ static int get_dialog_width(void)
     return dialog_width;
 }
 
-static void draw_foreground(void)
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
 
@@ -82,6 +83,11 @@ static void draw_foreground(void)
     lang_text_draw_centered(13, 4, 176, 400, 288, FONT_NORMAL_BLACK);
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

@@ -41,7 +41,7 @@ typedef struct {
     int save_city_screenshot;
     int save_minimap_screenshot;
     int next_track;
-    int toggle_messages_screen;
+    int toggle_dialogs_screen;
 } global_hotkeys;
 
 typedef struct {
@@ -533,8 +533,8 @@ static void set_definition_for_action(hotkey_action action, hotkey_definition *d
             def->action = &data.hotkey_state.cycle_overlay;
             def->value = -1;
             break;
-        case HOTKEY_TOGGLE_MESSAGES_SCREEN:
-            def->action = &data.global_hotkey_state.toggle_messages_screen;
+        case HOTKEY_TOGGLE_DIALOGS_SCREEN:
+            def->action = &data.global_hotkey_state.toggle_dialogs_screen;
             break;
         default:
             def->action = 0;
@@ -749,14 +749,14 @@ void hotkey_handle_escape(void)
     window_popup_dialog_show(POPUP_DIALOG_QUIT, confirm_exit, 1);
 }
 
-static void toggle_messages_screen(void)
+static void toggle_dialogs_screen(void)
 {
     static int warning_id;
-    int is_on_second_screen = !config_get(CONFIG_UI_MESSAGES_ON_SECOND_SCREEN);
-    config_set(CONFIG_UI_MESSAGES_ON_SECOND_SCREEN, is_on_second_screen);
+    int is_on_second_screen = !config_get(CONFIG_UI_DIALOGS_ON_SECOND_SCREEN);
+    config_set(CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, is_on_second_screen);
     config_save();
     warning_id = city_warning_show_custom(translation_for(is_on_second_screen ?
-        TR_MESSAGES_ON_SECOND_SCREEN : TR_MESSAGES_ON_MAIN_SCREEN), warning_id);
+        TR_DIALOGS_ON_SECOND_SCREEN : TR_DIALOGS_ON_MAIN_SCREEN), warning_id);
     window_invalidate();
 }
 
@@ -787,8 +787,8 @@ void hotkey_handle_global_keys(void)
     if (data.global_hotkey_state.next_track) {
         sound_music_next_track();
     }
-    if (data.global_hotkey_state.toggle_messages_screen) {
-        toggle_messages_screen();
+    if (data.global_hotkey_state.toggle_dialogs_screen) {
+        toggle_dialogs_screen();
     }
 }
 

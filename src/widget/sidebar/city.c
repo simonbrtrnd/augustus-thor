@@ -494,6 +494,24 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m)
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_tools, 7, 0);
 }
 
+static int is_on_panel_button(const mouse *m, const image_button *button)
+{
+    return is_in_rect(m, button->x_offset, button->y_offset, button->width, button->height);
+}
+
+void widget_sidebar_city_handle_panel_mouse_over_window(const mouse *m)
+{
+    if (!m->left.went_up) {
+        return;
+    }
+    int closes_window = (window_is(WINDOW_ADVISORS) && is_on_panel_button(m, &panel_buttons_left[0])) ||
+        (window_is(WINDOW_EMPIRE) && is_on_panel_button(m, &panel_buttons_left[1]));
+    window_city_show();
+    if (!closes_window) {
+        widget_sidebar_city_handle_panel_mouse(m);
+    }
+}
+
 static int get_panel_list_width(void)
 {
     return second_screen_width() - 2 * PANEL_MARGIN;

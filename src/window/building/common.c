@@ -15,6 +15,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "map/building.h"
 #include "translation/translation.h"
@@ -52,6 +53,9 @@ int window_building_get_vertical_offset(building_info_context *c, int new_window
     int center = (old_window_height / 2) + y_offset;
     int new_window_y = center - (new_window_height / 2);
 
+    if (second_screen_is_current()) {
+        return new_window_y;
+    }
     if (new_window_y < MIN_Y_POSITION) {
         new_window_y = MIN_Y_POSITION;
     } else {

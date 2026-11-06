@@ -33,6 +33,12 @@ void widget_sidebar_city_draw_panel(void);
 void widget_sidebar_city_draw_panel_background(void);
 int widget_sidebar_city_handle_panel_mouse(const mouse *m);
 
+/**
+ * Handles a tap on the panel while a window such as the advisors or the empire map covers the city:
+ * the tap closes that window, then acts on the panel unless it hit the button that opened the window.
+ */
+void widget_sidebar_city_handle_panel_mouse_over_window(const mouse *m);
+
 void widget_sidebar_city_draw_panel_list_frame(void);
 
 /**

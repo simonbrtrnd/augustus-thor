@@ -13,6 +13,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -66,17 +67,8 @@ static void init(int shade_x, int shade_y, int shade_width, int shade_height)
     city_resource_determine_available(1);
     data.window_width = (data.four_line ? 4 : 9) + city_resource_get_potential()->size * 2;
 }
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_draw_underlying_window();
-
-    if (shade.full_screen) {
-        graphics_shade_rect(0, 0, screen_width(), screen_height(), 8);
-    } else {
-        graphics_shade_rect(shade.x + screen_dialog_offset_x(), shade.y + screen_dialog_offset_y(),
-            shade.width, shade.height, 8);
-    }
-
     int has_caravanserai = building_caravanserai_is_fully_functional();
     int has_lighthouse = building_lighthouse_is_fully_functional();
     trade_policy land_policy = city_trade_policy_get(LAND_TRADE_POLICY);
@@ -211,6 +203,20 @@ static void draw_background(void)
     lang_text_draw_centered(13, 1, 0, button_position, data.window_width * BLOCK_SIZE, FONT_NORMAL_BLACK);
     graphics_reset_dialog();
 
+}
+
+static void draw_background(void)
+{
+    window_draw_underlying_window();
+
+    if (shade.full_screen) {
+        graphics_shade_rect(0, 0, screen_width(), screen_height(), 8);
+    } else {
+        graphics_shade_rect(shade.x + screen_dialog_offset_x(), shade.y + screen_dialog_offset_y(),
+            shade.width, shade.height, 8);
+    }
+
+    second_screen_draw_dialog(draw_dialog_background);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

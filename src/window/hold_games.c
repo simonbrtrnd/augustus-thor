@@ -19,6 +19,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/window.h"
 #include "input/input.h"
 #include "translation/translation.h"
@@ -56,7 +57,7 @@ static struct {
     int game_possible;
 } data;
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
     int selected_game_id = city_data.games.selected_games_id;
     if (!selected_game_id) {
@@ -65,7 +66,6 @@ static void draw_background(void)
     }
     games_type *game = city_games_get_game_type(selected_game_id);
 
-    window_advisors_draw_dialog_background();
     graphics_in_dialog();
 
     outer_panel_draw(48, 48, 34, 22);
@@ -126,7 +126,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_advisors_draw_dialog_background();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     image_buttons_draw(0, 0, image_buttons_bottom, 3);
@@ -134,6 +140,11 @@ static void draw_foreground(void)
         image_buttons_draw(0, 0, action_button, 1);
     }
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void close_window(void)

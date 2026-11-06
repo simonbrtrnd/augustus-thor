@@ -13,6 +13,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/rich_text.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -127,10 +128,8 @@ static void init(void)
     rich_text_reset(0);
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_advisors_draw_dialog_background();
-
     graphics_in_dialog();
 
     outer_panel_draw(0, 0, 40, 27);
@@ -176,7 +175,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_advisors_draw_dialog_background();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
 
@@ -184,6 +189,11 @@ static void draw_foreground(void)
     image_buttons_draw(0, 0, image_buttons_bottom, 1);
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void button_god(const struct generic_button *button)

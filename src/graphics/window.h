@@ -139,6 +139,11 @@ void window_handle_second_screen_input(const mouse *m);
 
 void window_draw_underlying_window(void);
 
+/**
+ * Whether the window being drawn is the one under the current window, such as a dialog under a popup
+ */
+int window_is_drawing_underlying_window(void);
+
 int window_is(window_id id);
 
 void window_show(const window_type *window);

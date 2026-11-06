@@ -5,6 +5,7 @@
 #include "graphics/graphics.h"
 #include "graphics/image_button.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -53,12 +54,8 @@ static int init(translation_key title, translation_key message, int should_draw_
     return 1;
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    if (data.draw_underlying_window) {
-        window_draw_underlying_window();
-    }
-
     graphics_in_dialog();
     outer_panel_draw(80, 80, 30, data.height);
     text_draw_centered(data.title, 80, 100, 480, FONT_LARGE_BLACK, 0);
@@ -77,11 +74,24 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    if (data.draw_underlying_window) {
+        window_draw_underlying_window();
+    }
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     image_buttons_draw(80, 80, buttons, 1);
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void close(void)

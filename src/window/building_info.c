@@ -26,6 +26,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -68,7 +69,6 @@ enum {
 };
 
 #define OFFSET(x,y) (x + GRID_SIZE * y)
-#define SMALL_ICON_SIDE 24
 
 static void button_help(int param1, int param2);
 static void button_close(int param1, int param2);
@@ -93,33 +93,54 @@ static generic_button generic_button_monument_construction[] = {
 
 static building_info_context context;
 static building_info_context previous_context; //allow layering contexts
+static struct {
+    int x;
+    int y;
+    int width_blocks;
+    int height_blocks;
+} main_screen_frame, previous_main_screen_frame;
 static unsigned int focus_image_button_id;
 static unsigned int focus_mothball_image_button_id;
 static unsigned int focus_monument_construction_button_id;
 static int original_overlay;
 static int previous_overlay;
 
+static int scale_context_buttons_for_screen(void)
+{
+    float scale = second_screen_is_current() ? SECOND_SCREEN_BUTTON_SCALE : 0;
+    for (int i = 0; i < 3; i++) {
+        image_buttons_help_advisor_close[i].scale = scale;
+    }
+    for (int i = 0; i < 2; i++) {
+        image_button_mothball[i].scale = scale;
+    }
+    return image_button_width(&image_buttons_help_advisor_close[0]);
+}
+
 static void init_context_buttons(building_info_context *c)
 {
-    int y_offset = c->y_offset + c->height_blocks * BLOCK_SIZE - 13 - SMALL_ICON_SIDE; // 13px from bottom edge
+    int icon_side = scale_context_buttons_for_screen();
+    int y_offset = c->y_offset + c->height_blocks * BLOCK_SIZE - 13 - icon_side; // 13px from bottom edge
+    int close_x_offset = c->x_offset + c->width_blocks * BLOCK_SIZE - 16 - icon_side;
     //help button
     image_buttons_help_advisor_close[0].y_offset = y_offset;
     image_buttons_help_advisor_close[0].x_offset = c->x_offset + 14;
     //close button
     image_buttons_help_advisor_close[1].y_offset = y_offset;
-    image_buttons_help_advisor_close[1].x_offset = c->x_offset + c->width_blocks * BLOCK_SIZE - 40; // 40px from right edge
+    image_buttons_help_advisor_close[1].x_offset = close_x_offset;
     //advisor button
     image_buttons_help_advisor_close[2].y_offset = y_offset;
-    image_buttons_help_advisor_close[2].x_offset = c->x_offset + 38;
+    image_buttons_help_advisor_close[2].x_offset = c->x_offset + 14 + icon_side;
     for (int i = 0; i < 2; i++) {
         image_button_mothball[i].y_offset = y_offset;
-        image_button_mothball[i].x_offset = c->x_offset + c->width_blocks * BLOCK_SIZE - 64; // 64px from right edge
+        image_button_mothball[i].x_offset = close_x_offset - icon_side;
     }
 }
 
 static void update_context_buttons_vertical_offset(int new_context_y_offset, int new_context_block_height)
 {
-    int y_offset = new_context_y_offset + new_context_block_height * BLOCK_SIZE - SMALL_ICON_SIDE - 18; // 18px from bottom edge
+    int icon_side = image_button_height(&image_buttons_help_advisor_close[0]);
+    int y_offset = new_context_y_offset + new_context_block_height * BLOCK_SIZE - icon_side - 18; // 18px from bottom edge
     for (int i = 0; i < 3; i++) {
         image_buttons_help_advisor_close[i].y_offset = y_offset;
     }
@@ -568,12 +589,14 @@ static void init(int grid_offset)
     } else {
         context.y_offset = MIN_Y_POSITION;
     }
+    main_screen_frame.x = context.x_offset;
+    main_screen_frame.y = context.y_offset;
+    main_screen_frame.width_blocks = context.width_blocks;
+    main_screen_frame.height_blocks = context.height_blocks;
 }
 
-static void draw_background(void)
+static void draw_info_background(void)
 {
-    window_city_draw_panels();
-    window_city_draw();
     context.risk_icons.active = 0;
     if (context.type == BUILDING_INFO_NONE) {
         window_building_draw_no_people(&context);
@@ -864,7 +887,37 @@ static void draw_background(void)
     }
 }
 
-static void draw_foreground(void)
+static int get_second_screen_min_height(void)
+{
+    if (context.show_special_orders || context.depot_selection) {
+        return BLOCK_SIZE * 28;
+    }
+    return BLOCK_SIZE * context.height_blocks;
+}
+
+static void draw_info_background_on_second_screen(void)
+{
+    context.width_blocks = screen_width() / BLOCK_SIZE;
+    context.height_blocks = screen_height() / BLOCK_SIZE;
+    context.x_offset = (screen_width() - BLOCK_SIZE * context.width_blocks) / 2;
+    context.y_offset = (screen_height() - BLOCK_SIZE * context.height_blocks) / 2;
+    draw_info_background();
+}
+
+static void draw_background(void)
+{
+    window_city_draw_panels();
+    window_city_draw();
+    context.width_blocks = main_screen_frame.width_blocks;
+    context.height_blocks = main_screen_frame.height_blocks;
+    if (!second_screen_draw_full_screen_dialog(get_second_screen_min_height(), draw_info_background_on_second_screen)) {
+        context.x_offset = main_screen_frame.x;
+        context.y_offset = main_screen_frame.y;
+        draw_info_background();
+    }
+}
+
+static void draw_info_foreground(void)
 {
     building *b = building_get(context.building_id);
     // building-specific buttons
@@ -1012,6 +1065,11 @@ static void draw_foreground(void)
             draw_mothball_button();
         }
     }
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_info_foreground);
 }
 
 static int handle_specific_building_info_mouse(const mouse *m)
@@ -1306,6 +1364,7 @@ void window_building_info_show_storage_special_orders_on_top(int building_id)
 {
     previous_context = context;
     previous_overlay = original_overlay;
+    previous_main_screen_frame = main_screen_frame;
     building *new_context_building = building_get(building_id);
     window_building_info_show(new_context_building->grid_offset);
     context.show_special_orders = SPECIAL_ORDERS_STORAGE;
@@ -1316,6 +1375,7 @@ void window_building_info_restore_previous_context(void)
 {
     context = previous_context;
     original_overlay = previous_overlay;
+    main_screen_frame = previous_main_screen_frame;
     window_building_info_reset_previous_context();
     window_invalidate();
 }

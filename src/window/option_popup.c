@@ -10,6 +10,7 @@
 #include "graphics/panel.h"
 #include "graphics/screen.h"
 #include "graphics/scrollbar.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -121,10 +122,8 @@ static void draw_apply_button(int x, int y, int box_width)
     }
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_draw_underlying_window();
-
     calculate_visible_options();
     graphics_in_dialog_with_size(16 * data.width_blocks, 16 * data.height_blocks);
     outer_panel_draw(0, 0, data.width_blocks, data.height_blocks);
@@ -172,7 +171,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_draw_underlying_window();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog_with_size(16 * data.width_blocks, 16 * data.height_blocks);
     for (unsigned int i = 0; i < data.visible_options; i++) {
@@ -193,6 +198,11 @@ static void draw_foreground(void)
     }
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

@@ -737,7 +737,7 @@ void window_building_draw_distributor_orders(building_info_context *c, const uin
     building_type type = building_get(c->building_id)->type;
     c->help_id = type == BUILDING_DOCK ? 83 : 3;
     int y_offset = window_building_get_vertical_offset(c, 28);
-    outer_panel_draw(c->x_offset, y_offset, 29, 28);
+    outer_panel_draw(c->x_offset, y_offset, c->width_blocks, 28);
     text_draw_centered(title, c->x_offset, y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
 
     if (!data.showing_special_orders || data.building_id != c->building_id) {
@@ -1364,7 +1364,7 @@ void window_building_draw_storage_orders(building_info_context *c)
     };
     int y_offset = window_building_get_vertical_offset(c, 28);
     c->help_id = is_granary(c) ? 3 : 4;
-    outer_panel_draw(c->x_offset, y_offset, 29, 28);
+    outer_panel_draw(c->x_offset, y_offset, c->width_blocks, 28);
     lang_sequence instructions_sequence;
     lang_seq_init(&instructions_sequence, instructions_header, 3);
     lang_seq_draw_centered(&instructions_sequence, c->x_offset, y_offset + 10, BLOCK_SIZE * c->width_blocks,

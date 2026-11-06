@@ -7,6 +7,7 @@
 #include "graphics/graphics.h"
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/panel.h"
 #include "graphics/text.h"
@@ -68,9 +69,8 @@ static int init(const uint8_t *custom_title, const uint8_t *custom_text,
     return 1;
 }
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_draw_underlying_window();
     graphics_in_dialog();
     outer_panel_draw(80, 80, 30, data.checkbox_text ? 11 : 10);
     if (data.custom_title) {
@@ -90,7 +90,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_draw_underlying_window();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
     if (data.checkbox_text) {
@@ -102,6 +108,11 @@ static void draw_foreground(void)
         lang_text_draw_centered(13, 1, 80, 208, 480, FONT_NORMAL_BLACK);
     }
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

@@ -4,6 +4,11 @@
 #include "input/mouse.h"
 
 /**
+ * Scale of the buttons of dialogs drawn on the second screen, so they are easier to touch.
+ */
+#define SECOND_SCREEN_BUTTON_SCALE 1.5f
+
+/**
  * A second physical screen, such as the touch screen of the AYN Thor.
  * It has its own size and coordinates, in game pixels.
  */
@@ -45,11 +50,31 @@ int second_screen_draw(void (*draw)(void));
 int second_screen_draw_background(void (*draw)(void));
 
 /**
- * Same as second_screen_draw_background, over a darkened marble background, at the scale where
- * a dialog of the given size in game pixels fills the second screen.
- * Returns 0 without drawing when the player keeps the messages on the main screen.
+ * Whether dialogs such as messages, building info and small popups go on the second screen.
  */
-int second_screen_draw_dialog_background(int width, int height, void (*draw)(void));
+int second_screen_shows_dialogs(void);
+
+/**
+ * Runs the draw function of a dialog on the second screen when dialogs go there, or on the main screen.
+ * The first call of a redraw clears the second screen at the scale where a full 640x480 dialog fits.
+ * Later calls, and those of a window opened over a dialog of the second screen, draw over it.
+ */
+void second_screen_draw_dialog(void (*draw)(void));
+
+/**
+ * Same as second_screen_draw_background, for a dialog that fills the second screen with whole blocks.
+ * The scale is 2.5, or smaller when the dialog needs more than the screen height in game pixels.
+ * The dialog sizes itself from screen_width() and screen_height(), over a marble background
+ * that shows only where whole blocks do not meet the screen edges.
+ * Returns 0 without drawing when second_screen_shows_dialogs is false.
+ */
+int second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void));
+
+/**
+ * Whether the second screen shows the dialog of the current window, or the dialog it was opened over.
+ * Input on the main screen then can only close the window.
+ */
+int second_screen_has_dialog(void);
 
 void second_screen_draw_marble_background(void);
 

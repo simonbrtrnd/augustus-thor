@@ -12,6 +12,7 @@
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -66,7 +67,7 @@ static void draw_background(void)
     window_draw_underlying_window();
 }
 
-static void draw_foreground(void)
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
 
@@ -215,6 +216,11 @@ static void draw_foreground(void)
     image_buttons_draw(0, 0, resource_image_buttons, 2);
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static int needs_to_open_trade_route(int status)

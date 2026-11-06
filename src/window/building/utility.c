@@ -195,7 +195,7 @@ void window_building_draw_roadblock_orders(building_info_context *c)
 {
     c->help_id = 3;
     int y_offset = window_building_get_vertical_offset(c, 28);
-    outer_panel_draw(c->x_offset, y_offset, 29, 28);
+    outer_panel_draw(c->x_offset, y_offset, c->width_blocks, 28);
     text_draw_centered(translation_for(TR_TOOLTIP_BUTTON_ROADBLOCK_PERMISSION), c->x_offset, y_offset + 10, 16 * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, y_offset + 42, c->width_blocks - 2, 21);
 }

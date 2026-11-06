@@ -10,6 +10,7 @@
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -40,10 +41,8 @@ static struct {
     unsigned int focus_arrow_button_id;
 } data;
 
-static void draw_background(void)
+static void draw_dialog_background(void)
 {
-    window_advisors_draw_dialog_background();
-
     graphics_in_dialog();
 
     outer_panel_draw(64, 160, 32, 10);
@@ -75,7 +74,13 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_foreground(void)
+static void draw_background(void)
+{
+    window_advisors_draw_dialog_background();
+    second_screen_draw_dialog(draw_dialog_background);
+}
+
+static void draw_dialog_foreground(void)
 {
     graphics_in_dialog();
 
@@ -91,6 +96,11 @@ static void draw_foreground(void)
     arrow_buttons_draw(0, 0, arrow_buttons, 2);
 
     graphics_reset_dialog();
+}
+
+static void draw_foreground(void)
+{
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

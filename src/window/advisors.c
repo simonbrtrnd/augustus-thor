@@ -22,9 +22,11 @@
 #include "graphics/image.h"
 #include "graphics/image_button.h"
 #include "graphics/panel.h"
+#include "graphics/second_screen.h"
 #include "graphics/window.h"
 #include "input/input.h"
 #include "translation/translation.h"
+#include "widget/sidebar/city.h"
 #include "window/city.h"
 #include "window/message_dialog.h"
 #include "window/advisor/chief.h"
@@ -205,6 +207,7 @@ static void draw_background(void)
     graphics_in_dialog();
     advisor_height = current_advisor_window->draw_background();
     graphics_reset_dialog();
+    second_screen_draw_background(widget_sidebar_city_draw_panel_background);
 }
 
 static void draw_foreground(void)
@@ -218,6 +221,7 @@ static void draw_foreground(void)
         current_advisor_window->draw_foreground();
         graphics_reset_dialog();
     }
+    second_screen_draw(widget_sidebar_city_draw_panel);
 }
 
 static void handle_hotkeys(const hotkeys *h)
@@ -319,7 +323,9 @@ void window_advisors_show(void)
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        widget_sidebar_city_handle_panel_mouse_over_window
     };
     init();
     window_show(&window);

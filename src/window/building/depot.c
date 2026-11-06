@@ -635,12 +635,12 @@ void window_building_draw_depot_order_source_destination_background(building_inf
     }
     int y_offset = window_building_get_vertical_offset(c, 28);
     c->help_id = 0;
-    outer_panel_draw(c->x_offset, y_offset, 29, 28);
+    outer_panel_draw(c->x_offset, y_offset, c->width_blocks, 28);
     text_draw_centered(title, c->x_offset, y_offset + 10, 16 * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, y_offset + 42, c->width_blocks - 2, 21);
     data.window_area.x = c->x_offset;
     data.window_area.y = y_offset;
-    data.window_area.width = 29 * BLOCK_SIZE;
+    data.window_area.width = c->width_blocks * BLOCK_SIZE;
     data.window_area.height = 28 * BLOCK_SIZE;
 }
 
@@ -1029,13 +1029,13 @@ void window_building_draw_depot_select_resource(building_info_context *c)
 {
     int y_offset = window_building_get_vertical_offset(c, 28);
     c->help_id = 0;
-    outer_panel_draw(c->x_offset, y_offset, 29, 28);
+    outer_panel_draw(c->x_offset, y_offset, c->width_blocks, 28);
     text_draw_centered(translation_for(TR_BUILDING_INFO_DEPOT_SELECT_RESOURCE_TITLE),
         c->x_offset, y_offset + 10, 16 * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, y_offset + 42, c->width_blocks - 2, 21);
     data.window_area.x = c->x_offset;
     data.window_area.y = y_offset;
-    data.window_area.width = 29 * BLOCK_SIZE;
+    data.window_area.width = c->width_blocks * BLOCK_SIZE;
     data.window_area.height = 28 * BLOCK_SIZE;
 }
 

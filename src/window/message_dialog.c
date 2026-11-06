@@ -19,6 +19,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/rich_text.h"
+#include "graphics/screen.h"
 #include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/video.h"
@@ -40,10 +41,19 @@
 #define DIALOG_HEIGHT 480
 #define VIDEO_MESSAGE_WIDTH_BLOCKS 26
 #define VIDEO_MESSAGE_HEIGHT_BLOCKS 28
+#define VIDEO_WIDTH 400
+#define VIDEO_HEIGHT 292
+#define VIDEO_LOWER_PART_Y 308
+// On the second screen, the video shrinks so that the frame fills the screen and the text under the video,
+// with its larger buttons, keeps this height
+#define SECOND_SCREEN_VIDEO_LOWER_PART_HEIGHT 162
+#define SECOND_SCREEN_VIDEO_BUTTON_MARGIN 2
+#define SECOND_SCREEN_SCROLLBAR_OFFSET 8
 #define MAX_HISTORY 200
 #define POPUP_PROTECTION_MILIS 400
 
 static void draw_foreground_video(void);
+static image_button *get_advisor_button(void);
 
 static void button_back(int param1, int param2);
 static void button_close(int param1, int param2);
@@ -94,6 +104,12 @@ static image_button image_button_financial = {
 static image_button image_button_chief = {
     0, 0, 27, 27, IB_NORMAL, GROUP_MESSAGE_ADVISOR_BUTTONS, 33, button_advisor, button_none, ADVISOR_CHIEF, 0, 1
 };
+static image_button *const all_image_buttons[] = {
+    &image_button_back, &image_button_close, &image_button_go_to_problem, &image_button_help,
+    &image_button_labor, &image_button_trade, &image_button_population, &image_button_imperial,
+    &image_button_military, &image_button_health, &image_button_entertainment, &image_button_religion,
+    &image_button_financial, &image_button_chief
+};
 static lang_fragment seq = { .type = LANG_FRAG_LABEL, .text_id = TR_SIDEBAR_EXTRA_REQUESTS_SEND, .text_group = CUSTOM_TRANSLATION };
 static complex_button complex_button_dispatch_request = {
     .width = 200,
@@ -119,10 +135,21 @@ static struct {
     int should_play_background_music;
     int background_image_id;
     time_millis time_message_displayed;
-    int is_on_second_screen;
+    int is_text_laid_out_on_second_screen;
 
     int x;
     int y;
+    int width_blocks;
+    int height_blocks;
+    struct {
+        int frame_x;
+        int frame_right;
+        int x;
+        int y;
+        int width;
+        int height;
+        int lower_part_shift;
+    } video;
     int x_text;
     int y_text;
     int text_height_blocks;
@@ -302,12 +329,14 @@ static int setup_request_button(const lang_message *msg)
     if (scenario_request_can_comply(player_message.param1)) { // param1 should already be set to request id here
         complex_button_dispatch_request.is_hidden = 0;
         complex_button_dispatch_request.parameters[0] = player_message.param1;
-        complex_button_dispatch_request.x = data.x + (BLOCK_SIZE * msg->width_blocks) / 2 -
+        int width_blocks = data.show_video ? msg->width_blocks : data.width_blocks;
+        int height_blocks = data.show_video ? msg->height_blocks : data.height_blocks;
+        complex_button_dispatch_request.x = data.x + (BLOCK_SIZE * width_blocks) / 2 -
             complex_button_dispatch_request.width / 2;
-        complex_button_dispatch_request.y = data.y + BLOCK_SIZE * msg->height_blocks - 40;
+        complex_button_dispatch_request.y = data.y + BLOCK_SIZE * height_blocks - 40;
         if (data.show_video) { // video message positioning is different
             complex_button_dispatch_request.x -= 32;
-            complex_button_dispatch_request.y += 128;
+            complex_button_dispatch_request.y += 128 + data.video.lower_part_shift;
         }
         return 1;
     }
@@ -527,13 +556,13 @@ static void draw_title(const lang_message *msg)
     // title
     if (msg->message_type == MESSAGE_TYPE_TUTORIAL) {
         text_draw_centered(msg->title.text,
-            data.x, data.y + msg->title.y, BLOCK_SIZE * msg->width_blocks, FONT_LARGE_BLACK, 0);
+            data.x, data.y + msg->title.y, BLOCK_SIZE * data.width_blocks, FONT_LARGE_BLACK, 0);
     } else {
         // Center title in the dialog but ensure it does not overlap with the
         // image: if the title is too long, it will start 8px from the image.
         int title_x_offset = img ? img->width + msg->image.x + 8 : 0;
         text_draw_centered(msg->title.text, data.x + title_x_offset, data.y + 14,
-            BLOCK_SIZE * msg->width_blocks - 2 * title_x_offset, FONT_LARGE_BLACK, 0);
+            BLOCK_SIZE * data.width_blocks - 2 * title_x_offset, FONT_LARGE_BLACK, 0);
     }
     data.y_text = data.y + 48;
 
@@ -551,7 +580,7 @@ static void draw_title(const lang_message *msg)
 static void draw_subtitle(const lang_message *msg)
 {
     if (msg->subtitle.x && msg->subtitle.text) {
-        int width = BLOCK_SIZE * (msg->width_blocks - 1) - msg->subtitle.x;
+        int width = BLOCK_SIZE * (data.width_blocks - 1) - msg->subtitle.x;
         int height = text_draw_multiline(msg->subtitle.text,
             data.x + msg->subtitle.x, data.y + msg->subtitle.y, width, 0, FONT_NORMAL_BLACK, 0);
         if (data.y + msg->subtitle.y + height > data.y_text) {
@@ -570,10 +599,16 @@ static void draw_content(const lang_message *msg)
     }
 
     rich_text_set_fonts(FONT_NORMAL_WHITE, FONT_NORMAL_GREEN, FONT_NORMAL_RED, 5);
-    int header_offset = msg->type == TYPE_MANUAL ? 48 : 32;
-    data.text_height_blocks = msg->height_blocks - 1 - (header_offset + data.y_text - data.y) / BLOCK_SIZE;
+    int header_offset = msg->type == TYPE_MANUAL || second_screen_is_drawing() ? 48 : 32;
+    data.text_height_blocks = data.height_blocks - 1 - (header_offset + data.y_text - data.y) / BLOCK_SIZE;
+    if (data.is_text_laid_out_on_second_screen != second_screen_is_drawing()) {
+        data.is_text_laid_out_on_second_screen = second_screen_is_drawing();
+        rich_text_reset(0);
+    }
     data.text_width_blocks = rich_text_init(msg->content.text,
-        data.x_text, data.y_text, msg->width_blocks - 4, data.text_height_blocks, 1);
+        data.x_text, data.y_text, data.width_blocks - 4, data.text_height_blocks, 1);
+    rich_text_set_scrollbar_x(data.x_text + BLOCK_SIZE * (data.width_blocks - 4) - 1 +
+        (second_screen_is_drawing() ? SECOND_SCREEN_SCROLLBAR_OFFSET : 0));
 
     // content!
     inner_panel_draw(data.x_text, data.y_text, data.text_width_blocks, data.text_height_blocks);
@@ -588,23 +623,77 @@ static void draw_content(const lang_message *msg)
     }
 }
 
-static void set_message_position(int x, int y, int width_blocks, int height_blocks)
+static void scale_buttons_for_screen(void)
 {
-    if (second_screen_is_active()) {
-        data.x = (DIALOG_WIDTH - BLOCK_SIZE * width_blocks) / 2;
-        data.y = (DIALOG_HEIGHT - BLOCK_SIZE * height_blocks) / 2;
-    } else {
-        data.x = x;
-        data.y = y;
+    float scale = second_screen_is_current() ? SECOND_SCREEN_BUTTON_SCALE : 0;
+    for (unsigned int i = 0; i < sizeof(all_image_buttons) / sizeof(all_image_buttons[0]); i++) {
+        all_image_buttons[i]->scale = scale;
     }
+}
+
+static int get_bottom_button_y(const image_button *button, int margin)
+{
+    return data.y + BLOCK_SIZE * data.height_blocks - margin - image_button_height(button);
+}
+
+static int get_right_button_x(const image_button *button, int margin)
+{
+    return data.x + BLOCK_SIZE * data.width_blocks - margin - image_button_width(button);
+}
+
+static int get_video_button_y(const image_button *button, int margin)
+{
+    if (button->scale) {
+        return data.y + BLOCK_SIZE * (data.height_blocks - 1) - SECOND_SCREEN_VIDEO_BUTTON_MARGIN -
+            image_button_height(button);
+    }
+    return data.y + BLOCK_SIZE * VIDEO_MESSAGE_HEIGHT_BLOCKS - margin - image_button_height(button);
+}
+
+static void set_video_layout(void)
+{
+    data.video.frame_x = data.x;
+    data.video.frame_right = data.x + BLOCK_SIZE * data.width_blocks;
+    data.x += BLOCK_SIZE * (data.width_blocks - VIDEO_MESSAGE_WIDTH_BLOCKS) / 2;
+    if (!second_screen_is_drawing()) {
+        data.video.x = data.x + 8;
+        data.video.y = data.y + 8;
+        data.video.width = VIDEO_WIDTH;
+        data.video.height = VIDEO_HEIGHT;
+        data.video.lower_part_shift = 0;
+        return;
+    }
+    int lower_part_y = data.y + BLOCK_SIZE * data.height_blocks - SECOND_SCREEN_VIDEO_LOWER_PART_HEIGHT;
+    data.video.lower_part_shift = lower_part_y - (data.y + VIDEO_LOWER_PART_Y);
+    data.video.y = data.y + BLOCK_SIZE;
+    data.video.height = lower_part_y - 8 - data.video.y;
+    data.video.width = VIDEO_WIDTH * data.video.height / VIDEO_HEIGHT;
+    data.video.x = data.x + 8 + (VIDEO_WIDTH - data.video.width) / 2;
+}
+
+static void set_message_frame(int x, int y, int width_blocks, int height_blocks)
+{
+    if (second_screen_is_drawing()) {
+        width_blocks = screen_width() / BLOCK_SIZE;
+        height_blocks = screen_height() / BLOCK_SIZE;
+        x = (screen_width() - BLOCK_SIZE * width_blocks) / 2;
+        y = (screen_height() - BLOCK_SIZE * height_blocks) / 2;
+    } else if (second_screen_is_active()) {
+        x = (DIALOG_WIDTH - BLOCK_SIZE * width_blocks) / 2;
+        y = (DIALOG_HEIGHT - BLOCK_SIZE * height_blocks) / 2;
+    }
+    data.x = x;
+    data.y = y;
+    data.width_blocks = width_blocks;
+    data.height_blocks = height_blocks;
 }
 
 static void draw_background_normal(void)
 {
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
-    set_message_position(msg->x, msg->y, msg->width_blocks, msg->height_blocks);
+    set_message_frame(msg->x, msg->y, msg->width_blocks, msg->height_blocks);
     data.x_text = data.x + 16;
-    outer_panel_draw(data.x, data.y, msg->width_blocks, msg->height_blocks);
+    outer_panel_draw(data.x, data.y, data.width_blocks, data.height_blocks);
 
     draw_title(msg);
     draw_subtitle(msg);
@@ -612,15 +701,18 @@ static void draw_background_normal(void)
 
     if (msg->type == TYPE_MANUAL && data.num_history > 0) {
         // Back button text
-        lang_text_draw(12, 0,
-            data.x + 52, data.y + BLOCK_SIZE * msg->height_blocks - 31, FONT_NORMAL_BLACK);
+        lang_text_draw(12, 0, data.x + 21 + image_button_width(&image_button_back),
+            get_bottom_button_y(&image_button_back, 16) + (image_button_height(&image_button_back) - 10) / 2,
+            FONT_NORMAL_BLACK);
     }
 }
 
 static void draw_background_video(void)
 {
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
-    set_message_position(32, 28, VIDEO_MESSAGE_WIDTH_BLOCKS, VIDEO_MESSAGE_HEIGHT_BLOCKS);
+    set_message_frame(32, 28, VIDEO_MESSAGE_WIDTH_BLOCKS, VIDEO_MESSAGE_HEIGHT_BLOCKS);
+    outer_panel_draw(data.x, data.y, data.width_blocks, data.height_blocks);
+    set_video_layout();
 
     int small_font = 0;
     int lines_required = 0;
@@ -639,10 +731,9 @@ static void draw_background_video(void)
         }
     }
 
-    outer_panel_draw(data.x, data.y, VIDEO_MESSAGE_WIDTH_BLOCKS, VIDEO_MESSAGE_HEIGHT_BLOCKS);
-    graphics_fill_rect(data.x + 7, data.y + 7, 402, 294, COLOR_BLACK);
+    graphics_fill_rect(data.video.x - 1, data.video.y - 1, data.video.width + 2, data.video.height + 2, COLOR_BLACK);
 
-    int y_base = data.y + 308;
+    int y_base = data.y + VIDEO_LOWER_PART_Y + data.video.lower_part_shift;
     int inner_height_blocks = 6;
     if (lines_required > lines_available) {
         // create space to cram an extra line into the dialog
@@ -652,7 +743,8 @@ static void draw_background_video(void)
     inner_panel_draw(data.x + 8, y_base, 25, inner_height_blocks);
     if (msg->message_type != MESSAGE_TYPE_CUSTOM) {
         if (!setup_request_button(msg)) {
-            text_draw_centered(msg->title.text, data.x + 8, data.y + 414, 400, FONT_NORMAL_BLACK, 0);
+            text_draw_centered(msg->title.text, data.x + 8, get_video_button_y(get_advisor_button(), 13) +
+                image_button_height(get_advisor_button()) / 2 - 7, 400, FONT_NORMAL_BLACK, 0);
         }
     }
 
@@ -680,7 +772,7 @@ static void draw_background_video(void)
     }
 
     if (msg->type == TYPE_MESSAGE && msg->message_type == MESSAGE_TYPE_IMPERIAL) {
-        int y_text = data.y + 384;
+        int y_text = data.y + 384 + data.video.lower_part_shift;
         if (lines_required > lines_available) {
             y_text += 8;
         }
@@ -698,9 +790,19 @@ static void draw_background_video(void)
     draw_foreground_video();
 }
 
+static void enter_dialog(void)
+{
+    if (second_screen_is_drawing()) {
+        graphics_in_dialog_with_size(screen_width(), screen_height());
+    } else {
+        graphics_in_dialog();
+    }
+}
+
 static void draw_dialog_background(void)
 {
-    graphics_in_dialog();
+    enter_dialog();
+    scale_buttons_for_screen();
     if (data.show_video) {
         draw_background_video();
     } else {
@@ -720,12 +822,7 @@ static void draw_background(void)
     } else {
         window_draw_underlying_window();
     }
-    const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
-    int width_blocks = data.show_video ? VIDEO_MESSAGE_WIDTH_BLOCKS : msg->width_blocks;
-    int height_blocks = data.show_video ? VIDEO_MESSAGE_HEIGHT_BLOCKS : msg->height_blocks;
-    data.is_on_second_screen = second_screen_draw_dialog_background(BLOCK_SIZE * width_blocks,
-        BLOCK_SIZE * height_blocks, draw_dialog_background);
-    if (!data.is_on_second_screen) {
+    if (!second_screen_draw_full_screen_dialog(0, draw_dialog_background)) {
         draw_dialog_background();
     }
 }
@@ -758,23 +855,32 @@ static image_button *get_advisor_button(void)
     }
 }
 
+static int get_video_go_to_problem_x(void)
+{
+    float scale = image_button_go_to_problem.scale ? image_button_go_to_problem.scale : 1.0f;
+    return data.video.frame_x + 16 + (int) (32 * scale);
+}
+
+static int get_video_close_x(void)
+{
+    return data.video.frame_right - 20 - image_button_width(&image_button_close);
+}
+
 static void draw_foreground_normal(void)
 {
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
 
     if (msg->type == TYPE_MANUAL && data.num_history > 0) {
-        image_buttons_draw(
-            data.x + 16, data.y + BLOCK_SIZE * msg->height_blocks - 36,
-            &image_button_back, 1);
+        image_buttons_draw(data.x + 16, get_bottom_button_y(&image_button_back, 16), &image_button_back, 1);
     }
 
     if (msg->type == TYPE_MESSAGE) {
-        image_buttons_draw(data.x + 16, data.y + BLOCK_SIZE * msg->height_blocks - 40, get_advisor_button(), 1);
+        image_buttons_draw(data.x + 16, get_bottom_button_y(get_advisor_button(), 13), get_advisor_button(), 1);
         if (is_event_message(msg)) {
             image_buttons_draw(data.x + 64, data.y_text + 36, &image_button_go_to_problem, 1);
         }
     }
-    image_buttons_draw(data.x + BLOCK_SIZE * msg->width_blocks - 38, data.y + BLOCK_SIZE * msg->height_blocks - 36,
+    image_buttons_draw(get_right_button_x(&image_button_close, 14), get_bottom_button_y(&image_button_close, 12),
         &image_button_close, 1);
     setup_request_button(msg);
     complex_button_draw(&complex_button_dispatch_request);
@@ -783,19 +889,22 @@ static void draw_foreground_normal(void)
 
 static void draw_foreground_video(void)
 {
-    video_draw(data.x + 8, data.y + 8, 400, 292);
-    image_buttons_draw(data.x + 16, data.y + 408, get_advisor_button(), 1);
-    image_buttons_draw(data.x + 372, data.y + 410, &image_button_close, 1);
+    video_draw(data.video.x, data.video.y, data.video.width, data.video.height);
+    image_buttons_draw(data.video.frame_x + 16, get_video_button_y(get_advisor_button(), 13), get_advisor_button(), 1);
+    image_buttons_draw(get_video_close_x(), get_video_button_y(&image_button_close, 14), &image_button_close, 1);
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
     if (is_event_message(msg)) {
-        image_buttons_draw(data.x + 48, data.y + 407, &image_button_go_to_problem, 1);
+        image_buttons_draw(get_video_go_to_problem_x(), get_video_button_y(&image_button_go_to_problem, 14),
+            &image_button_go_to_problem, 1);
     }
     if (msg->message_type == MESSAGE_TYPE_CUSTOM) {
         if (msg->title.text) {
-            text_draw_centered(msg->title.text, data.x + 16, data.y + 336, 384, FONT_LARGE_BLACK, 0);
+            text_draw_centered(msg->title.text, data.x + 16, data.y + 336 + data.video.lower_part_shift, 384,
+                FONT_LARGE_BLACK, 0);
         }
         if (msg->subtitle.text) {
-            text_draw_centered(msg->subtitle.text, data.x + 32, data.y + 368, 368, FONT_SMALL_PLAIN, 0);
+            text_draw_centered(msg->subtitle.text, data.x + 32, data.y + 368 + data.video.lower_part_shift, 368,
+                FONT_SMALL_PLAIN, 0);
         }
     } else {
         if (setup_request_button(msg)) {
@@ -806,7 +915,8 @@ static void draw_foreground_video(void)
 
 static void draw_dialog_foreground(void)
 {
-    graphics_in_dialog();
+    enter_dialog();
+    scale_buttons_for_screen();
     if (data.show_video) {
         draw_foreground_video();
     } else {
@@ -817,27 +927,25 @@ static void draw_dialog_foreground(void)
 
 static void draw_foreground(void)
 {
-    if (data.is_on_second_screen) {
-        second_screen_draw(draw_dialog_foreground);
-    } else {
-        draw_dialog_foreground();
-    }
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static int handle_input_video(const mouse *m_dialog, const lang_message *msg, const hotkeys *h)
 {
-    if (image_buttons_handle_mouse(m_dialog, data.x + 16, data.y + 408, get_advisor_button(), 1, 0)) {
+    if (image_buttons_handle_mouse(m_dialog, data.video.frame_x + 16, get_video_button_y(get_advisor_button(), 13),
+        get_advisor_button(), 1, 0)) {
         return 1;
     }
-    if (image_buttons_handle_mouse(m_dialog, data.x + 372, data.y + 410, &image_button_close, 1, 0)) {
+    if (image_buttons_handle_mouse(m_dialog, get_video_close_x(), get_video_button_y(&image_button_close, 14),
+        &image_button_close, 1, 0)) {
         return 1;
     }
     if (complex_button_handle_mouse(&complex_button_dispatch_request, m_dialog)) {
         return 1;
     }
     if (is_event_message(msg)) {
-        if (image_buttons_handle_mouse(m_dialog, data.x + 48, data.y + 407,
-            &image_button_go_to_problem, 1,
+        if (image_buttons_handle_mouse(m_dialog, get_video_go_to_problem_x(),
+            get_video_button_y(&image_button_go_to_problem, 14), &image_button_go_to_problem, 1,
             &data.focus_button_id)) {
             return 1;
         }
@@ -855,7 +963,7 @@ static int handle_input_normal(const mouse *m_dialog, const lang_message *msg)
         return 1;
     }
     if (msg->type == TYPE_MANUAL && image_buttons_handle_mouse(
-        m_dialog, data.x + 16, data.y + BLOCK_SIZE * msg->height_blocks - 36, &image_button_back, 1, 0)) {
+        m_dialog, data.x + 16, get_bottom_button_y(&image_button_back, 16), &image_button_back, 1, 0)) {
         return 1;
     }
     if (msg->type == TYPE_MESSAGE) {
@@ -863,7 +971,7 @@ static int handle_input_normal(const mouse *m_dialog, const lang_message *msg)
             return 1;
         }
         if (image_buttons_handle_mouse(
-            m_dialog, data.x + 16, data.y + BLOCK_SIZE * msg->height_blocks - 40, get_advisor_button(), 1, 0)) {
+            m_dialog, data.x + 16, get_bottom_button_y(get_advisor_button(), 13), get_advisor_button(), 1, 0)) {
             return 1;
         }
         if (is_event_message(msg)) {
@@ -875,8 +983,7 @@ static int handle_input_normal(const mouse *m_dialog, const lang_message *msg)
     }
 
     if (image_buttons_handle_mouse(m_dialog,
-        data.x + BLOCK_SIZE * msg->width_blocks - 38,
-        data.y + BLOCK_SIZE * msg->height_blocks - 36,
+        get_right_button_x(&image_button_close, 14), get_bottom_button_y(&image_button_close, 12),
         &image_button_close, 1, 0)) {
         return 1;
     }
@@ -904,8 +1011,9 @@ static int can_skip_popup(void)
     return 0;
 }
 
-static void handle_dialog_input(const mouse *m, const hotkeys *h)
+static void handle_input(const mouse *m, const hotkeys *h)
 {
+    scale_buttons_for_screen();
     data.focus_button_id = 0;
     const mouse *m_dialog = mouse_in_dialog(m);
     const lang_message *msg = get_custom_or_standard_lang_message(data.text_id);
@@ -917,26 +1025,6 @@ static void handle_dialog_input(const mouse *m, const hotkeys *h)
     }
     if (!handled && input_go_back_requested(m, h) && can_skip_popup()) {
         button_close(0, 0);
-    }
-}
-
-static void handle_input(const mouse *m, const hotkeys *h)
-{
-    if (!data.is_on_second_screen) {
-        handle_dialog_input(m, h);
-        return;
-    }
-    data.focus_button_id = 0;
-    if (input_go_back_requested(m, h) && can_skip_popup()) {
-        button_close(0, 0);
-    }
-}
-
-static void handle_second_screen_input(const mouse *m)
-{
-    static const hotkeys no_hotkeys;
-    if (data.is_on_second_screen) {
-        handle_dialog_input(m, &no_hotkeys);
     }
 }
 
@@ -1024,9 +1112,7 @@ static void init_window(int text_id, int is_custom_message, void (*background_ca
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip,
-        0,
-        handle_second_screen_input
+        get_tooltip
     };
     init(text_id, is_custom_message, background_callback);
     window_show(&window);

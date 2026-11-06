@@ -63,7 +63,7 @@ void set_city_clip_rectangle(void)
     graphics_set_clip_rectangle(x, y, width, height);
 }
 
-static void display_zoom_warning(int zoom)
+static void display_zoom_warning(int scale)
 {
     static uint8_t zoom_string[100];
     static int warning_id;
@@ -72,7 +72,7 @@ static void display_zoom_warning(int zoom)
         string_copy(string_from_ascii(" "), cursor, (int) (cursor - zoom_string));
     }
     int position = string_length(lang_get_string(CUSTOM_TRANSLATION, TR_ZOOM)) + 1;
-    position += string_from_int(zoom_string + position, zoom, 0);
+    position += string_from_int(zoom_string + position, calc_percentage(100, scale), 0);
     string_copy(string_from_ascii("%"), zoom_string + position, 100 - position);
     warning_id = city_warning_show_custom(zoom_string, warning_id);
 }

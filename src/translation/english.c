@@ -2400,7 +2400,8 @@ static translation_string all_strings[] = {
     {TR_CHEAT_FILL_MARKETS, "Filled all markets with food and goods"},
     {TR_CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, "Show windows on the second screen"},
     {TR_DIALOGS_ON_SECOND_SCREEN, "Windows on the second screen"},
-    {TR_DIALOGS_ON_MAIN_SCREEN, "Windows on the main screen"}
+    {TR_DIALOGS_ON_MAIN_SCREEN, "Windows on the main screen"},
+    {TR_BUTTON_PANEL_MENU, "Menu"}
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

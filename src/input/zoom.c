@@ -1,9 +1,9 @@
 #include "zoom.h"
 
+#include "city/view.h"
 #include "core/calc.h"
 #include "core/config.h"
 #include "core/speed.h"
-#include "graphics/menu.h"
 #include "input/hotkey.h"
 
 #include <math.h>
@@ -62,6 +62,13 @@ void zoom_end_touch(void)
     data.touch.active = 0;
 }
 
+static int get_y_in_viewport(int y)
+{
+    int x_offset, y_offset, width, height;
+    city_view_get_viewport(&x_offset, &y_offset, &width, &height);
+    return y - y_offset;
+}
+
 void zoom_map(const mouse *m, const hotkeys *h, int current_zoom)
 {
     if (data.touch.active || m->is_touch) {
@@ -71,7 +78,7 @@ void zoom_map(const mouse *m, const hotkeys *h, int current_zoom)
         data.restore = 1;
         speed_clear(&data.step);
         data.input_offset.x = m->x;
-        data.input_offset.y = m->y - TOP_MENU_HEIGHT;
+        data.input_offset.y = get_y_in_viewport(m->y);
         return;
     }
     if (h->zoom_in || h->zoom_out) {
@@ -92,7 +99,7 @@ void zoom_map(const mouse *m, const hotkeys *h, int current_zoom)
             speed_set_target(&data.step, ZOOM_STEP, SPEED_CHANGE_IMMEDIATE, 1);
         }
         data.input_offset.x = m->x;
-        data.input_offset.y = m->y - TOP_MENU_HEIGHT;
+        data.input_offset.y = get_y_in_viewport(m->y);
     }
 }
 

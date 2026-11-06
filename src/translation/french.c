@@ -2400,6 +2400,7 @@ static translation_string all_strings[] = {
     {TR_CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, "Afficher les fenêtres sur l'écran du bas"},
     {TR_DIALOGS_ON_SECOND_SCREEN, "Fenêtres sur l'écran du bas"},
     {TR_DIALOGS_ON_MAIN_SCREEN, "Fenêtres sur l'écran du haut"},
+    {TR_BUTTON_PANEL_MENU, "Menu"},
 };
 
 void translation_french(const translation_string **strings, int *num_strings)

@@ -602,14 +602,21 @@ static int get_sidebar_width(int width_on_screen)
     return second_screen_is_active() ? 0 : width_on_screen;
 }
 
+static int get_top_menu_height(void)
+{
+    return second_screen_is_active() ? 0 : TOP_MENU_HEIGHT;
+}
+
 static void set_viewport_with_sidebar(void)
 {
-    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - get_sidebar_width(160), data.screen_height - TOP_MENU_HEIGHT);
+    int top = get_top_menu_height();
+    set_viewport(0, top, data.screen_width - get_sidebar_width(160), data.screen_height - top);
 }
 
 static void set_viewport_without_sidebar(void)
 {
-    set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - get_sidebar_width(40), data.screen_height - TOP_MENU_HEIGHT);
+    int top = get_top_menu_height();
+    set_viewport(0, top, data.screen_width - get_sidebar_width(40), data.screen_height - top);
 }
 
 void city_view_set_scale(int scale)

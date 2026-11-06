@@ -22,15 +22,19 @@
 #include "graphics/graphics.h"
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
+#include "graphics/generic_button.h"
 #include "graphics/menu.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
+#include "input/input.h"
 #include "scenario/criteria.h"
 #include "scenario/event/controller.h"
 #include "scenario/property.h"
 #include "widget/city/city.h"
+#include "widget/sidebar/city.h"
 #include "window/advisors.h"
 #include "window/advisor/health.h"
 #include "window/city.h"
@@ -88,6 +92,8 @@ static void menu_help_about(int param);
 static void menu_advisors_go_to(int advisor);
 static void ratings_advisors_go_to(int advisor);
 
+static void panel_open_submenu(int index);
+
 static menu_item menu_file[] = {
     {1, 2, menu_file_replay_map, 0},
     {1, 3, menu_file_load_game, 0},
@@ -137,8 +143,30 @@ static menu_bar_item menu[] = {
     {4, menu_advisors, 13},
 };
 
-static const int INDEX_OPTIONS = 1;
-static const int INDEX_HELP = 2;
+enum {
+    INDEX_FILE = 0,
+    INDEX_OPTIONS = 1,
+    INDEX_HELP = 2,
+    INDEX_ADVISORS = 3
+};
+
+static menu_item panel_menu_items[] = {
+    {1, 4, menu_file_save_game, 0},
+    {1, 3, menu_file_load_game, 0},
+    {1, 0, panel_open_submenu, INDEX_FILE},
+    {2, 0, panel_open_submenu, INDEX_OPTIONS},
+    {3, 0, panel_open_submenu, INDEX_HELP},
+};
+
+static menu_bar_item panel_menu = {0, panel_menu_items, 5};
+
+#define MAX_PANEL_ITEMS 13
+
+static struct {
+    menu_bar_item *list;
+    generic_button buttons[MAX_PANEL_ITEMS];
+    unsigned int focus_button_id;
+} panel;
 typedef struct {
     int start;
     int end;
@@ -562,6 +590,9 @@ char widget_top_menu_get_cosmetic_day_of_month(void)
 
 void widget_top_menu_draw(int force)
 {
+    if (second_screen_is_active()) {
+        return;
+    }
     // Skip redraw if nothing changed
     if (!force &&
         drawn.treasury == city_finance_treasury() &&
@@ -804,13 +835,18 @@ int widget_top_menu_handle_input(const mouse *m, const hotkeys *h)
     }
     if (data.open_sub_menu) {
         return handle_input_submenu(m, h);
-    } else {
-        return handle_mouse_menu(m);
     }
+    if (second_screen_is_active()) {
+        return 0;
+    }
+    return handle_mouse_menu(m);
 }
 
 int widget_top_menu_get_tooltip_text(tooltip_context *c)
 {
+    if (second_screen_is_active()) {
+        return 0;
+    }
     if (data.focus_menu_id) {
         return 49 + data.focus_menu_id;
     }
@@ -1044,4 +1080,100 @@ static void ratings_advisors_go_to(int advisor)
 {
     clear_state();
     window_advisors_show_advisor(advisor);
+}
+
+static void panel_open_submenu(int index)
+{
+    panel.list = &menu[index];
+    panel.focus_button_id = 0;
+}
+
+static int is_panel_submenu(const menu_bar_item *list)
+{
+    return list != &panel_menu && list != &menu[INDEX_ADVISORS];
+}
+
+static void button_panel_item(const generic_button *button)
+{
+    const menu_item *item = &panel.list->items[button->parameter1];
+    item->left_click_handler(item->parameter);
+}
+
+static void draw_panel_list(void)
+{
+    widget_sidebar_city_draw_panel_list_frame();
+    int count = panel.list->num_items;
+    for (int i = 0; i < count; i++) {
+        const menu_item *item = &panel.list->items[i];
+        panel_list_item list_item = {
+            .label = lang_get_string(item->text_group, item->text_number),
+            .has_submenu = item->left_click_handler == panel_open_submenu,
+            .is_label_centered = 1,
+            .is_highlighted = panel.focus_button_id == i + 1
+        };
+        panel.buttons[i].left_click_handler = button_panel_item;
+        panel.buttons[i].parameter1 = i;
+        widget_sidebar_city_draw_panel_list_item(i, count, &list_item, &panel.buttons[i]);
+    }
+}
+
+static void draw_panel_list_foreground(void)
+{
+    window_city_draw();
+    second_screen_draw(draw_panel_list);
+}
+
+static void handle_panel_list_input(const mouse *m, const hotkeys *h)
+{
+    if (m->left.went_up || input_go_back_requested(m, h)) {
+        window_city_show();
+    }
+}
+
+static void handle_panel_list_second_screen_input(const mouse *m)
+{
+    switch (widget_sidebar_city_handle_panel_list(m, panel.buttons, panel.list->num_items,
+        &panel.focus_button_id)) {
+        case PANEL_LIST_BACK:
+            if (is_panel_submenu(panel.list)) {
+                panel.list = &panel_menu;
+                panel.focus_button_id = 0;
+            } else {
+                window_city_show();
+            }
+            break;
+        case PANEL_LIST_OUTSIDE:
+            window_city_show();
+            break;
+        default:
+            break;
+    }
+}
+
+static void show_panel_list(menu_bar_item *list)
+{
+    window_type window = {
+        WINDOW_TOP_MENU,
+        window_city_draw_panels,
+        draw_panel_list_foreground,
+        handle_panel_list_input,
+        0,
+        0,
+        handle_panel_list_second_screen_input
+    };
+    init();
+    clear_state();
+    panel.list = list;
+    panel.focus_button_id = 0;
+    window_show(&window);
+}
+
+void widget_top_menu_show_panel_menu(void)
+{
+    show_panel_list(&panel_menu);
+}
+
+void widget_top_menu_show_panel_reports(void)
+{
+    show_panel_list(&menu[INDEX_ADVISORS]);
 }

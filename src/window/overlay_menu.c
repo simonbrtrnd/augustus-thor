@@ -496,7 +496,6 @@ static struct {
     const overlay_menu_entry *levels[MAX_PANEL_DEPTH];
     int depth;
     generic_button buttons[MAX_BUTTONS];
-    int num_buttons;
     unsigned int focus_button_id;
 } panel;
 
@@ -513,8 +512,8 @@ static void draw_panel_menu(void)
 {
     widget_sidebar_city_draw_panel_list_frame();
     const overlay_menu_entry *entries = panel.levels[panel.depth];
-    panel.num_buttons = count_entries(entries);
-    for (int i = 0; i < panel.num_buttons; i++) {
+    int count = count_entries(entries);
+    for (int i = 0; i < count; i++) {
         panel_list_item item = {
             .label = get_overlay_text(&entries[i]),
             .has_submenu = entries[i].submenu != 0,
@@ -523,7 +522,7 @@ static void draw_panel_menu(void)
         };
         panel.buttons[i].left_click_handler = button_panel_item;
         panel.buttons[i].parameter1 = i;
-        widget_sidebar_city_draw_panel_list_item(i, panel.num_buttons, &item, &panel.buttons[i]);
+        widget_sidebar_city_draw_panel_list_item(i, count, &item, &panel.buttons[i]);
     }
 }
 
@@ -586,20 +585,13 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
 static void handle_second_screen_input(const mouse *m)
 {
-    switch (widget_sidebar_city_handle_panel_list(m, panel.buttons, panel.num_buttons, &panel.focus_button_id)) {
-        case PANEL_LIST_BACK:
-            if (panel.depth > 0) {
-                panel.depth--;
-                panel.focus_button_id = 0;
-            } else {
-                close_menu();
-            }
-            break;
-        case PANEL_LIST_OUTSIDE:
-            close_menu();
-            break;
-        default:
-            break;
+    panel_list_action action = widget_sidebar_city_handle_panel_list(m, panel.buttons,
+        count_entries(panel.levels[panel.depth]), &panel.focus_button_id);
+    if (action == PANEL_LIST_BACK && panel.depth > 0) {
+        panel.depth--;
+        panel.focus_button_id = 0;
+    } else if (action != PANEL_LIST_NO_ACTION) {
+        close_menu();
     }
 }
 
@@ -712,8 +704,7 @@ static void button_menu_item(const generic_button *button)
 static void button_panel_item(const generic_button *button)
 {
     const overlay_menu_entry *entry = &panel.levels[panel.depth][button->parameter1];
-    int has_submenu = entry->submenu && entry->submenu[0].overlay != NO_ITEM;
-    if (has_submenu && panel.depth < MAX_PANEL_DEPTH - 1) {
+    if (entry->submenu && panel.depth < MAX_PANEL_DEPTH - 1) {
         panel.levels[++panel.depth] = entry->submenu;
         panel.focus_button_id = 0;
         return;

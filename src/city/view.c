@@ -597,26 +597,23 @@ static void set_viewport(int x_offset, int y_offset, int width, int height)
     data.viewport.height_tiles = calc_adjust_with_percentage(height, data.scale) / HALF_TILE_HEIGHT_PIXELS;
 }
 
-static int get_sidebar_width(int width_on_screen)
+static void set_viewport_beside_sidebar(int sidebar_width)
 {
-    return second_screen_is_active() ? 0 : width_on_screen;
-}
-
-static int get_top_menu_height(void)
-{
-    return second_screen_is_active() ? 0 : TOP_MENU_HEIGHT;
+    if (second_screen_is_active()) {
+        set_viewport(0, 0, data.screen_width, data.screen_height);
+    } else {
+        set_viewport(0, TOP_MENU_HEIGHT, data.screen_width - sidebar_width, data.screen_height - TOP_MENU_HEIGHT);
+    }
 }
 
 static void set_viewport_with_sidebar(void)
 {
-    int top = get_top_menu_height();
-    set_viewport(0, top, data.screen_width - get_sidebar_width(160), data.screen_height - top);
+    set_viewport_beside_sidebar(160);
 }
 
 static void set_viewport_without_sidebar(void)
 {
-    int top = get_top_menu_height();
-    set_viewport(0, top, data.screen_width - get_sidebar_width(40), data.screen_height - top);
+    set_viewport_beside_sidebar(40);
 }
 
 void city_view_set_scale(int scale)

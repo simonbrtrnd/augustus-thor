@@ -11,6 +11,7 @@
 #include <math.h>
 
 #define PANEL_PIXEL_SCALE 4.0f
+#define BUTTON_SCALE 1.5f
 // On the AYN Thor, 1240x1080 pixels at 2.5 are exactly 31x27 blocks, so dialog borders meet the screen edges
 #define FULL_SCREEN_DIALOG_PIXEL_SCALE 2.5f
 #define FULL_DIALOG_WIDTH 640
@@ -52,6 +53,11 @@ int second_screen_is_drawing(void)
 int second_screen_is_current(void)
 {
     return data.is_drawing || data.is_handling_input;
+}
+
+float second_screen_button_scale(void)
+{
+    return second_screen_is_current() ? BUTTON_SCALE : 0;
 }
 
 void second_screen_set_size(int width, int height)
@@ -119,14 +125,14 @@ int second_screen_draw_background(void (*draw)(void))
     return 1;
 }
 
-int second_screen_shows_dialogs(void)
+static int shows_dialogs(void)
 {
     return second_screen_is_active() && config_get(CONFIG_UI_DIALOGS_ON_SECOND_SCREEN);
 }
 
 static int draw_dialog_background(float pixel_scale, int is_darkened, void (*draw)(void))
 {
-    if (!second_screen_shows_dialogs() || !begin_background(pixel_scale)) {
+    if (!shows_dialogs() || !begin_background(pixel_scale)) {
         return 0;
     }
     second_screen_draw_marble_background();
@@ -139,13 +145,13 @@ static int draw_dialog_background(float pixel_scale, int is_darkened, void (*dra
     return 1;
 }
 
-static float get_scale_to_fit(int width, int height)
+static float get_full_dialog_scale(void)
 {
-    return fminf((float) data.screen_width / (width + 2 * DIALOG_MARGIN),
-        (float) data.screen_height / (height + 2 * DIALOG_MARGIN));
+    return fminf((float) data.screen_width / (FULL_DIALOG_WIDTH + 2 * DIALOG_MARGIN),
+        (float) data.screen_height / (FULL_DIALOG_HEIGHT + 2 * DIALOG_MARGIN));
 }
 
-int second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
+void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
 {
     float pixel_scale = FULL_SCREEN_DIALOG_PIXEL_SCALE;
     if (min_height * pixel_scale > data.screen_height) {
@@ -153,9 +159,11 @@ int second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
     }
     if (window_is_drawing_underlying_window()) {
         // A window opened over this dialog is drawn at its scale, so the dialog shrinks until a full dialog fits
-        pixel_scale = fminf(pixel_scale, get_scale_to_fit(FULL_DIALOG_WIDTH, FULL_DIALOG_HEIGHT));
+        pixel_scale = fminf(pixel_scale, get_full_dialog_scale());
     }
-    return draw_dialog_background(pixel_scale, 0, draw);
+    if (!draw_dialog_background(pixel_scale, 0, draw)) {
+        draw();
+    }
 }
 
 int second_screen_has_dialog(void)
@@ -166,7 +174,7 @@ int second_screen_has_dialog(void)
 void second_screen_draw_dialog(void (*draw)(void))
 {
     int is_drawn = second_screen_has_dialog() ? second_screen_draw(draw) :
-        draw_dialog_background(get_scale_to_fit(FULL_DIALOG_WIDTH, FULL_DIALOG_HEIGHT), 1, draw);
+        draw_dialog_background(get_full_dialog_scale(), 1, draw);
     if (!is_drawn) {
         draw();
     }

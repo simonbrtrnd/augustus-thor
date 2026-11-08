@@ -109,7 +109,6 @@ static struct {
     int y_text;
     int text_width_blocks;
     int text_height_blocks;
-    unsigned int visible_messages;
     unsigned int focus_button_id;
     message_filter type_displayed;
     int message_count;
@@ -192,19 +191,14 @@ static int get_bottom_y(void)
     return PANEL_TOP + BLOCK_SIZE * data.height_blocks;
 }
 
-static int get_help_y(void)
+static int get_bottom_button_y(const image_button *button, int margin)
 {
-    return get_bottom_y() - 15 - image_button_height(&image_button_help);
+    return get_bottom_y() - margin - image_button_height(button);
 }
 
 static int get_close_x(void)
 {
     return BLOCK_SIZE * data.width_blocks - 14 - image_button_width(&image_button_close);
-}
-
-static int get_close_y(void)
-{
-    return get_bottom_y() - 18 - image_button_height(&image_button_close);
 }
 
 static int get_delete_common_x(void)
@@ -226,20 +220,20 @@ static void set_layout(void)
         data.width_blocks = 30;
         data.height_blocks = 22;
     }
-    float button_scale = second_screen_is_drawing() ? SECOND_SCREEN_BUTTON_SCALE : 0;
+    float button_scale = second_screen_button_scale();
     image_button_help.scale = button_scale;
     image_button_close.scale = button_scale;
     data.x_text = 16;
     data.y_text = 112;
     data.text_width_blocks = data.width_blocks - 4;
     data.text_height_blocks = data.height_blocks - (button_scale ? 10 : 9);
-    data.visible_messages = (BLOCK_SIZE * data.text_height_blocks - 8) / MESSAGE_ROW_HEIGHT;
-    if (data.visible_messages > MAX_MESSAGES) {
-        data.visible_messages = MAX_MESSAGES;
+    unsigned int visible_messages = (BLOCK_SIZE * data.text_height_blocks - 8) / MESSAGE_ROW_HEIGHT;
+    if (visible_messages > MAX_MESSAGES) {
+        visible_messages = MAX_MESSAGES;
     }
     scrollbar.x = data.x_text + BLOCK_SIZE * data.text_width_blocks;
-    scrollbar.length = MESSAGE_ROW_HEIGHT * data.visible_messages + 8;
-    scrollbar.elements_in_view = data.visible_messages;
+    scrollbar.length = MESSAGE_ROW_HEIGHT * visible_messages + 8;
+    scrollbar.elements_in_view = visible_messages;
     scrollbar_update_total_elements(&scrollbar, data.message_count);
 }
 
@@ -278,14 +272,12 @@ static void draw_background(void)
 {
     window_city_draw_all();
 
-    if (!second_screen_draw_full_screen_dialog(0, draw_dialog_background)) {
-        draw_dialog_background();
-    }
+    second_screen_draw_full_screen_dialog(0, draw_dialog_background);
 }
 
 static void draw_messages(unsigned int total_messages)
 {
-    unsigned int max = total_messages < data.visible_messages ? total_messages : data.visible_messages;
+    unsigned int max = total_messages < scrollbar.elements_in_view ? total_messages : scrollbar.elements_in_view;
     unsigned int index = scrollbar.scroll_position;
     for (unsigned int i = 0; i < max; i++, index++) {
         const city_message *msg = city_message_get(data.filtered_message_list[index]);
@@ -332,8 +324,8 @@ static void draw_dialog_foreground(void)
 {
     enter_dialog();
 
-    image_buttons_draw(16, get_help_y(), &image_button_help, 1);
-    image_buttons_draw(get_close_x(), get_close_y(), &image_button_close, 1);
+    image_buttons_draw(16, get_bottom_button_y(&image_button_help, 15), &image_button_help, 1);
+    image_buttons_draw(get_close_x(), get_bottom_button_y(&image_button_close, 18), &image_button_close, 1);
     if (review_briefing_button_should_be_active()) {
         image_buttons_draw(data.x_text + data.text_width_blocks * BLOCK_SIZE - 36, data.y_text - 27, &show_briefing_button, 1);
     }
@@ -366,11 +358,13 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
 
     unsigned int button_id;
-    int handled = image_buttons_handle_mouse(m_dialog, 16, get_help_y(), &image_button_help, 1, &button_id);
+    int handled = image_buttons_handle_mouse(m_dialog, 16, get_bottom_button_y(&image_button_help, 15),
+        &image_button_help, 1, &button_id);
     if (button_id) {
         data.focus_button_id = 11;
     }
-    handled |= image_buttons_handle_mouse(m_dialog, get_close_x(), get_close_y(), &image_button_close, 1, &button_id);
+    handled |= image_buttons_handle_mouse(m_dialog, get_close_x(), get_bottom_button_y(&image_button_close, 18),
+        &image_button_close, 1, &button_id);
     if (button_id) {
         data.focus_button_id = 12;
     }
@@ -399,7 +393,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
 
     handled |= generic_buttons_handle_mouse(m_dialog, data.x_text, data.y_text + 4,
-        generic_buttons_messages, data.visible_messages, &button_id);
+        generic_buttons_messages, scrollbar.elements_in_view, &button_id);
     if (!data.focus_button_id) {
         data.focus_button_id = button_id;
     }

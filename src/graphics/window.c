@@ -121,12 +121,10 @@ static void update_input_before(void)
     hotkey_handle_global_keys();
 }
 
-static const mouse *get_go_back_mouse(void)
+static mouse get_go_back_mouse(void)
 {
     const mouse *m = mouse_get();
-    static mouse go_back;
-    go_back = (mouse) { .x = -1, .y = -1, .right = m->right, .is_touch = m->is_touch };
-    return &go_back;
+    return (mouse) { .x = -1, .y = -1, .right = m->right, .is_touch = m->is_touch };
 }
 
 static void update_input_after(void)
@@ -152,7 +150,8 @@ void window_draw(int force)
 
     const hotkeys *h = hotkey_state();
     if (second_screen_has_dialog()) {
-        w->handle_input(get_go_back_mouse(), h);
+        mouse go_back = get_go_back_mouse();
+        w->handle_input(&go_back, h);
     } else {
         const mouse *m = mouse_get();
         w->handle_input(m, h);

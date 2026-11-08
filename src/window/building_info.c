@@ -105,21 +105,21 @@ static unsigned int focus_monument_construction_button_id;
 static int original_overlay;
 static int previous_overlay;
 
-static int scale_context_buttons_for_screen(void)
+static void scale_context_buttons_for_screen(void)
 {
-    float scale = second_screen_is_current() ? SECOND_SCREEN_BUTTON_SCALE : 0;
+    float scale = second_screen_button_scale();
     for (int i = 0; i < 3; i++) {
         image_buttons_help_advisor_close[i].scale = scale;
     }
     for (int i = 0; i < 2; i++) {
         image_button_mothball[i].scale = scale;
     }
-    return image_button_width(&image_buttons_help_advisor_close[0]);
 }
 
 static void init_context_buttons(building_info_context *c)
 {
-    int icon_side = scale_context_buttons_for_screen();
+    scale_context_buttons_for_screen();
+    int icon_side = image_button_width(&image_buttons_help_advisor_close[0]);
     int y_offset = c->y_offset + c->height_blocks * BLOCK_SIZE - 13 - icon_side; // 13px from bottom edge
     int close_x_offset = c->x_offset + c->width_blocks * BLOCK_SIZE - 16 - icon_side;
     //help button
@@ -892,15 +892,22 @@ static int get_second_screen_min_height(void)
     if (context.show_special_orders || context.depot_selection) {
         return BLOCK_SIZE * 28;
     }
-    return BLOCK_SIZE * context.height_blocks;
+    return BLOCK_SIZE * main_screen_frame.height_blocks;
 }
 
-static void draw_info_background_on_second_screen(void)
+static void draw_info_dialog_background(void)
 {
-    context.width_blocks = screen_width() / BLOCK_SIZE;
-    context.height_blocks = screen_height() / BLOCK_SIZE;
-    context.x_offset = (screen_width() - BLOCK_SIZE * context.width_blocks) / 2;
-    context.y_offset = (screen_height() - BLOCK_SIZE * context.height_blocks) / 2;
+    if (second_screen_is_drawing()) {
+        context.width_blocks = screen_width() / BLOCK_SIZE;
+        context.height_blocks = screen_height() / BLOCK_SIZE;
+        context.x_offset = (screen_width() - BLOCK_SIZE * context.width_blocks) / 2;
+        context.y_offset = (screen_height() - BLOCK_SIZE * context.height_blocks) / 2;
+    } else {
+        context.width_blocks = main_screen_frame.width_blocks;
+        context.height_blocks = main_screen_frame.height_blocks;
+        context.x_offset = main_screen_frame.x;
+        context.y_offset = main_screen_frame.y;
+    }
     draw_info_background();
 }
 
@@ -908,13 +915,7 @@ static void draw_background(void)
 {
     window_city_draw_panels();
     window_city_draw();
-    context.width_blocks = main_screen_frame.width_blocks;
-    context.height_blocks = main_screen_frame.height_blocks;
-    if (!second_screen_draw_full_screen_dialog(get_second_screen_min_height(), draw_info_background_on_second_screen)) {
-        context.x_offset = main_screen_frame.x;
-        context.y_offset = main_screen_frame.y;
-        draw_info_background();
-    }
+    second_screen_draw_full_screen_dialog(get_second_screen_min_height(), draw_info_dialog_background);
 }
 
 static void draw_info_foreground(void)

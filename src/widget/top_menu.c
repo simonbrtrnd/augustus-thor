@@ -1082,10 +1082,15 @@ static void ratings_advisors_go_to(int advisor)
     window_advisors_show_advisor(advisor);
 }
 
+static void set_panel_list(menu_bar_item *list)
+{
+    panel.list = list;
+    panel.focus_button_id = 0;
+}
+
 static void panel_open_submenu(int index)
 {
-    panel.list = &menu[index];
-    panel.focus_button_id = 0;
+    set_panel_list(&menu[index]);
 }
 
 static int is_panel_submenu(const menu_bar_item *list)
@@ -1132,21 +1137,12 @@ static void handle_panel_list_input(const mouse *m, const hotkeys *h)
 
 static void handle_panel_list_second_screen_input(const mouse *m)
 {
-    switch (widget_sidebar_city_handle_panel_list(m, panel.buttons, panel.list->num_items,
-        &panel.focus_button_id)) {
-        case PANEL_LIST_BACK:
-            if (is_panel_submenu(panel.list)) {
-                panel.list = &panel_menu;
-                panel.focus_button_id = 0;
-            } else {
-                window_city_show();
-            }
-            break;
-        case PANEL_LIST_OUTSIDE:
-            window_city_show();
-            break;
-        default:
-            break;
+    panel_list_action action = widget_sidebar_city_handle_panel_list(m, panel.buttons, panel.list->num_items,
+        &panel.focus_button_id);
+    if (action == PANEL_LIST_BACK && is_panel_submenu(panel.list)) {
+        set_panel_list(&panel_menu);
+    } else if (action != PANEL_LIST_NO_ACTION) {
+        window_city_show();
     }
 }
 
@@ -1163,8 +1159,7 @@ static void show_panel_list(menu_bar_item *list)
     };
     init();
     clear_state();
-    panel.list = list;
-    panel.focus_button_id = 0;
+    set_panel_list(list);
     window_show(&window);
 }
 

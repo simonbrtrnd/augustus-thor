@@ -44,8 +44,6 @@
 #define VIDEO_WIDTH 400
 #define VIDEO_HEIGHT 292
 #define VIDEO_LOWER_PART_Y 308
-// On the second screen, the video shrinks so that the frame fills the screen and the text under the video,
-// with its larger buttons, keeps this height
 #define SECOND_SCREEN_VIDEO_LOWER_PART_HEIGHT 162
 #define SECOND_SCREEN_VIDEO_BUTTON_MARGIN 2
 #define SECOND_SCREEN_SCROLLBAR_OFFSET 8
@@ -143,7 +141,6 @@ static struct {
     int height_blocks;
     struct {
         int frame_x;
-        int frame_right;
         int x;
         int y;
         int width;
@@ -625,7 +622,7 @@ static void draw_content(const lang_message *msg)
 
 static void scale_buttons_for_screen(void)
 {
-    float scale = second_screen_is_current() ? SECOND_SCREEN_BUTTON_SCALE : 0;
+    float scale = second_screen_button_scale();
     for (unsigned int i = 0; i < sizeof(all_image_buttons) / sizeof(all_image_buttons[0]); i++) {
         all_image_buttons[i]->scale = scale;
     }
@@ -643,17 +640,12 @@ static int get_right_button_x(const image_button *button, int margin)
 
 static int get_video_button_y(const image_button *button, int margin)
 {
-    if (button->scale) {
-        return data.y + BLOCK_SIZE * (data.height_blocks - 1) - SECOND_SCREEN_VIDEO_BUTTON_MARGIN -
-            image_button_height(button);
-    }
-    return data.y + BLOCK_SIZE * VIDEO_MESSAGE_HEIGHT_BLOCKS - margin - image_button_height(button);
+    return get_bottom_button_y(button, button->scale ? BLOCK_SIZE + SECOND_SCREEN_VIDEO_BUTTON_MARGIN : margin);
 }
 
 static void set_video_layout(void)
 {
     data.video.frame_x = data.x;
-    data.video.frame_right = data.x + BLOCK_SIZE * data.width_blocks;
     data.x += BLOCK_SIZE * (data.width_blocks - VIDEO_MESSAGE_WIDTH_BLOCKS) / 2;
     if (!second_screen_is_drawing()) {
         data.video.x = data.x + 8;
@@ -822,9 +814,7 @@ static void draw_background(void)
     } else {
         window_draw_underlying_window();
     }
-    if (!second_screen_draw_full_screen_dialog(0, draw_dialog_background)) {
-        draw_dialog_background();
-    }
+    second_screen_draw_full_screen_dialog(0, draw_dialog_background);
 }
 
 static image_button *get_advisor_button(void)
@@ -863,7 +853,7 @@ static int get_video_go_to_problem_x(void)
 
 static int get_video_close_x(void)
 {
-    return data.video.frame_right - 20 - image_button_width(&image_button_close);
+    return data.video.frame_x + BLOCK_SIZE * data.width_blocks - 20 - image_button_width(&image_button_close);
 }
 
 static void draw_foreground_normal(void)

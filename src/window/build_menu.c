@@ -236,6 +236,9 @@ static void draw_resource_icon_scaled(int image_id, int x, int y)
 
 static const uint8_t *get_menu_item_name(building_type type)
 {
+    if (is_auto_cycle_button(type)) {
+        return translation_for(TR_AUTO_CYCLE_TEMPLES);
+    }
     switch (type) {
         case BUILDING_BRICKWORKS:
             return translation_for(TR_RESOURCE_BRICKS);
@@ -365,7 +368,7 @@ static void draw_panel_menu(void)
         uint8_t number_text[NUMBER_TEXT_LENGTH];
         const uint8_t *value = get_panel_item_value(type, number_text);
         panel_list_item item = {
-            .label = is_auto_cycle_button(type) ? translation_for(TR_AUTO_CYCLE_TEMPLES) : get_menu_item_name(type),
+            .label = get_menu_item_name(type),
             .value = value,
             .has_submenu = !value,
             .is_highlighted = data.focus_button_id == i + 1

@@ -1,5 +1,6 @@
 #include "city.h"
 
+#include "assets/assets.h"
 #include "building/construction.h"
 #include "building/properties.h"
 #include "building/rotation.h"
@@ -27,6 +28,7 @@
 #include "graphics/text.h"
 #include "graphics/video.h"
 #include "graphics/window.h"
+#include "input/mouse.h"
 #include "input/scroll.h"
 #include "input/zoom.h"
 #include "input/touch.h"
@@ -46,6 +48,12 @@
 #include "window/pause_menu.h"
 
 #define NO_POSITION ((unsigned int)-1)
+#define PANEL_ASSETS "Thor_Panel"
+#define MAP_BUTTON_GAP 16
+// The panel images have a light outer edge that blends into the map, so they are drawn a little taller
+#define ROTATE_BUTTON_HEIGHT 36
+#define ROTATE_BUTTON_WIDTH 37
+#define ROTATE_BUTTON_GAP (MAP_BUTTON_GAP - 4)
 
 static struct {
     map_tile current_tile;
@@ -54,6 +62,8 @@ static struct {
     int new_start_grid_offset;
     int capture_input;
     int routing_grid_offset;
+    int mouse_x;
+    int mouse_y;
 } data;
 
 void set_city_clip_rectangle(void)
@@ -109,7 +119,7 @@ void widget_city_draw_for_figure(int figure_id, pixel_coordinate *coord)
 
 void widget_city_draw_construction_cost_and_size(void)
 {
-    if (scroll_in_progress()) {
+    if (scroll_in_progress() && !second_screen_is_active()) {
         return;
     }
     int size_x, size_y;
@@ -186,6 +196,45 @@ static void draw_pause_button(void)
     }
 }
 
+static int shows_construction_buttons(void)
+{
+    return mouse_get()->is_touch || second_screen_is_active();
+}
+
+static int has_construction_to_confirm(void)
+{
+    if (!building_construction_type() || !data.selected_tile.grid_offset) {
+        return 0;
+    }
+    return !building_construction_is_updatable() || building_construction_in_progress();
+}
+
+static void draw_ok_cancel_button(int x, int y, int image_offset)
+{
+    inner_panel_draw(x, y, 3, 2);
+    button_border_draw(x, y, 3 * BLOCK_SIZE, 2 * BLOCK_SIZE, 0);
+    // Use clip rectangle to remove the border of the image
+    graphics_set_clip_rectangle(x + 5, y + 5, 37, 24);
+    image_draw(image_group(GROUP_OK_CANCEL_SCROLL_BUTTONS) + image_offset, x + 4, y + 4,
+        COLOR_MASK_NONE, SCALE_NONE);
+    graphics_reset_clip_rectangle();
+}
+
+static int get_rotate_button_x(int index)
+{
+    int first_x = has_pause_button_on_map() ? 4 * BLOCK_SIZE + 8 : 16;
+    return first_x + index * (ROTATE_BUTTON_WIDTH + ROTATE_BUTTON_GAP);
+}
+
+static void draw_rotate_button(int index, int y, const char *image_name)
+{
+    int image_id = assets_get_image_id(PANEL_ASSETS, image_name);
+    float scale = (float) image_get(image_id)->height / ROTATE_BUTTON_HEIGHT;
+    int x = get_rotate_button_x(index);
+    int top = y + (2 * BLOCK_SIZE - ROTATE_BUTTON_HEIGHT) / 2;
+    image_draw(image_id, (int) (x * scale), (int) (top * scale), COLOR_MASK_NONE, scale);
+}
+
 static void draw_construction_buttons(void)
 {
     if (!building_construction_type()) {
@@ -200,37 +249,17 @@ static void draw_construction_buttons(void)
             && game_state_is_paused()) {
         y_offset = 100;
     }
-    if (mouse_get()->is_touch) {
-        inner_panel_draw(x_offset, y_offset, 3, 2);
-        button_border_draw(x_offset, y_offset, 3 * BLOCK_SIZE, 2 * BLOCK_SIZE, 0);
-        // Use clip rectangle to remove the border of the "X" image
-        graphics_set_clip_rectangle(x_offset + 5, y_offset + 5, 37, 24);
-        image_draw(image_group(GROUP_OK_CANCEL_SCROLL_BUTTONS) + 4, x_offset + 4, y_offset + 4,
-            COLOR_MASK_NONE, SCALE_NONE);
-        graphics_reset_clip_rectangle();
+    if (shows_construction_buttons()) {
+        draw_ok_cancel_button(x_offset, y_offset, 4);
+        if (has_construction_to_confirm()) {
+            draw_ok_cancel_button(x_offset - 3 * BLOCK_SIZE - MAP_BUTTON_GAP, y_offset, 0);
+        }
     }
 
-    if ((mouse_get()->is_touch || config_get(CONFIG_UI_ALWAYS_SHOW_ROTATION_BUTTONS)) &&
+    if ((shows_construction_buttons() || config_get(CONFIG_UI_ALWAYS_SHOW_ROTATION_BUTTONS)) &&
         building_construction_can_rotate()) {
-        if (has_pause_button_on_map()) {
-            x_offset = 4 * BLOCK_SIZE + 8;
-        } else {
-            x_offset = 16;
-        }
-        inner_panel_draw(x_offset, y_offset, 3, 2);
-        button_border_draw(x_offset, y_offset, 3 * BLOCK_SIZE, 2 * BLOCK_SIZE, 0);
-        graphics_set_clip_rectangle(x_offset + 8, y_offset + 6, 37, 24);
-        image_draw(image_group(GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS) + 6, x_offset + 7, y_offset + 5,
-            COLOR_MASK_NONE, SCALE_NONE);
-        graphics_reset_clip_rectangle();
-
-        x_offset += 3 * BLOCK_SIZE + 8;
-        inner_panel_draw(x_offset, y_offset, 3, 2);
-        button_border_draw(x_offset, y_offset, 3 * BLOCK_SIZE, 2 * BLOCK_SIZE, 0);
-        graphics_set_clip_rectangle(x_offset + 8, y_offset + 6, 37, 24);
-        image_draw(image_group(GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS) + 9, x_offset + 7, y_offset + 5,
-            COLOR_MASK_NONE, SCALE_NONE);
-        graphics_reset_clip_rectangle();
+        draw_rotate_button(0, y_offset, "rotate-left");
+        draw_rotate_button(1, y_offset, "rotate-right");
     }
 }
 
@@ -262,28 +291,43 @@ static int is_cancel_construction_button(int x, int y)
     return x >= x_offset && x < x_offset + touch_width && y >= y_offset && y < y_offset + touch_height;
 }
 
-static int is_rotate_backward_button(int x, int y)
+static int is_confirm_construction_button(int x, int y)
+{
+    if (!has_construction_to_confirm()) {
+        return 0;
+    }
+    int city_x, city_y, width, height;
+    city_view_get_viewport(&city_x, &city_y, &width, &height);
+
+    int touch_width = 4 * BLOCK_SIZE;
+    int touch_height = 22 + 4 * BLOCK_SIZE;
+    int x_offset = width - 5 * BLOCK_SIZE - touch_width;
+    int y_offset = (sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED) && width < 680
+            && game_state_is_paused()) ? 84 : 24;
+
+    return x >= x_offset && x < x_offset + touch_width && y >= y_offset && y < y_offset + touch_height;
+}
+
+static int is_rotate_button(int index, int x, int y)
 {
     int city_x, city_y, width, height;
     city_view_get_viewport(&city_x, &city_y, &width, &height);
 
     int sidebar_pause_button = sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED);
-    int x_offset = has_pause_button_on_map() ? 4 * BLOCK_SIZE + 4 : 16;
+    int x_offset = get_rotate_button_x(index) - ROTATE_BUTTON_GAP / 2;
     int y_offset = sidebar_pause_button && width < 680 && game_state_is_paused() ? 84 : 24;
-    return x >= x_offset && x < x_offset + 3 * BLOCK_SIZE &&
+    return x >= x_offset && x < x_offset + ROTATE_BUTTON_WIDTH + ROTATE_BUTTON_GAP &&
         y >= y_offset && y < y_offset + 4 * BLOCK_SIZE;
+}
+
+static int is_rotate_backward_button(int x, int y)
+{
+    return is_rotate_button(0, x, y);
 }
 
 static int is_rotate_forward_button(int x, int y)
 {
-    int city_x, city_y, width, height;
-    city_view_get_viewport(&city_x, &city_y, &width, &height);
-
-    int sidebar_pause_button = sidebar_extra_is_information_displayed(SIDEBAR_EXTRA_DISPLAY_GAME_SPEED);
-    int x_offset = has_pause_button_on_map() ? 7 * BLOCK_SIZE + 4 : 4 * BLOCK_SIZE + 4;
-    int y_offset = sidebar_pause_button && width < 680 && game_state_is_paused() ? 84 : 24;
-    return x >= x_offset && x < x_offset + 3 * BLOCK_SIZE &&
-        y >= y_offset && y < y_offset + 4 * BLOCK_SIZE;
+    return is_rotate_button(1, x, y);
 }
 
 // INPUT HANDLING
@@ -404,7 +448,7 @@ static int has_confirmed_construction(int ghost_offset, int tile_offset, int ran
 
 static int input_coords_in_city(int x, int y)
 {
-    if (is_pause_button(x, y) || is_cancel_construction_button(x, y) ||
+    if (is_pause_button(x, y) || is_cancel_construction_button(x, y) || is_confirm_construction_button(x, y) ||
         is_rotate_forward_button(x, y) || is_rotate_backward_button(x, y)) {
         return 0;
     }
@@ -481,13 +525,30 @@ static int handle_play_pause_button(const touch *t)
     return 0;
 }
 
-static int handle_construction_buttons(int x, int y, int is_touch)
+static void confirm_construction(void)
+{
+    if (!building_construction_is_updatable()) {
+        build_start(&data.selected_tile);
+        build_move(&data.selected_tile);
+    }
+    build_end();
+    widget_city_clear_current_tile();
+    data.new_start_grid_offset = 0;
+}
+
+static int use_construction_button(int x, int y, int is_touch)
 {
     if (!building_construction_type()) {
         return 0;
     }
-    if (is_touch && is_cancel_construction_button(x, y)) {
+    int has_ok_cancel_buttons = is_touch || second_screen_is_active();
+    if (has_ok_cancel_buttons && is_cancel_construction_button(x, y)) {
         building_construction_cancel();
+        window_request_refresh();
+        return 1;
+    }
+    if (has_ok_cancel_buttons && is_confirm_construction_button(x, y)) {
+        confirm_construction();
         window_request_refresh();
         return 1;
     }
@@ -503,6 +564,17 @@ static int handle_construction_buttons(int x, int y, int is_touch)
         }
     }
     return 0;
+}
+
+static int handle_construction_buttons(int x, int y, int is_touch)
+{
+    if (!use_construction_button(x, y, is_touch)) {
+        return 0;
+    }
+    if (is_touch) {
+        mouse_return_to_pointer();
+    }
+    return 1;
 }
 
 static void handle_first_touch(map_tile *tile)
@@ -622,13 +694,19 @@ int widget_city_has_input(void)
 static void handle_mouse(const mouse *m)
 {
     map_tile *tile = &data.current_tile;
-    update_city_view_coords(m->x, m->y, tile);
+    int has_mouse_moved = m->x != data.mouse_x || m->y != data.mouse_y;
+    data.mouse_x = m->x;
+    data.mouse_y = m->y;
+    if (has_mouse_moved || !has_construction_to_confirm()) {
+        update_city_view_coords(m->x, m->y, tile);
+    }
     building_construction_reset_draw_as_constructing();
     if (m->left.went_down) {
         if (handle_legion_click(tile)) {
             return;
         }
-        if (config_get(CONFIG_UI_ALWAYS_SHOW_ROTATION_BUTTONS) && handle_construction_buttons(m->x, m->y, 0)) {
+        if ((config_get(CONFIG_UI_ALWAYS_SHOW_ROTATION_BUTTONS) || second_screen_is_active()) &&
+            handle_construction_buttons(m->x, m->y, 0)) {
             return;
         }
         if (building_construction_type()) {

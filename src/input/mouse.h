@@ -81,6 +81,11 @@ void mouse_set_from_touch(const touch *first, const touch *last);
  */
 void mouse_remove_touch(void);
 
+/**
+ * Puts the mouse back where the pointer was last moved, by a mouse or a controller, before touches moved it
+ */
+void mouse_return_to_pointer(void);
+
 void mouse_reset_up_state(void);
 
 void mouse_reset_scroll(void);

@@ -26,6 +26,7 @@
 #include "game/state.h"
 #include "graphics/image.h"
 #include "graphics/renderer.h"
+#include "graphics/second_screen.h"
 #include "input/scroll.h"
 #include "map/bridge.h"
 #include "map/building.h"
@@ -74,6 +75,13 @@ enum {
     TILE_ALLOWED = 0,
     TILE_DISCOURAGED = -1
 };
+
+static int hides_ghost_while_scrolling(void)
+{
+    // With the second screen, the camera moves with a stick or the panel minimap while the ghost waits for
+    // confirmation, so the ghost stays in view
+    return scroll_in_progress() && !second_screen_is_active();
+}
 
 static const int FORT_GROUND_GRID_OFFSETS[4][4] = {
     { GRID_OFFSET(3, -1),  GRID_OFFSET(4, -1), GRID_OFFSET(4, 0),  GRID_OFFSET(3, 0)   },
@@ -1428,7 +1436,7 @@ int city_building_ghost_mark_deleting(const map_tile *tile)
     if (!is_land_work) {    // bail out early if not a land-work type
         return 0;
     }
-    if (!tile->grid_offset || building_construction_draw_as_constructing() || scroll_in_progress()) {
+    if (!tile->grid_offset || building_construction_draw_as_constructing() || hides_ghost_while_scrolling()) {
         return 1;
     }
     if (!building_construction_in_progress()) { // no construction, clear bits
@@ -1582,7 +1590,7 @@ const city_overlay *city_building_ghost_get_overlay(void)
 
 void city_building_ghost_draw(const map_tile *tile)
 {
-    if (!tile->grid_offset || scroll_in_progress()) {
+    if (!tile->grid_offset || hides_ghost_while_scrolling()) {
         return;
     }
     building_type type = building_construction_type();

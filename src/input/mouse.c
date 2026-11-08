@@ -18,6 +18,11 @@ enum {
 static mouse data;
 static mouse dialog;
 static time_millis last_click;
+static struct {
+    int x;
+    int y;
+    int is_set;
+} pointer;
 
 const mouse *mouse_get(void)
 {
@@ -75,6 +80,19 @@ void mouse_set_position(int x, int y)
     data.y = calc_bound(y, 0, screen_height() - 1);
     data.is_touch = 0;
     data.is_inside_window = 1;
+    pointer.x = data.x;
+    pointer.y = data.y;
+    pointer.is_set = 1;
+}
+
+void mouse_return_to_pointer(void)
+{
+    if (!pointer.is_set) {
+        return;
+    }
+    data.x = pointer.x;
+    data.y = pointer.y;
+    system_set_mouse_position(&data.x, &data.y);
 }
 
 void mouse_center_cursor(void)

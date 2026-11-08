@@ -643,9 +643,6 @@ static int is_in_rect(const mouse *m, int x, int y, int width, int height)
 
 int widget_sidebar_city_handle_panel_mouse(const mouse *m)
 {
-    if (widget_city_has_input()) {
-        return 0;
-    }
     if (widget_minimap_handle_mouse(m)) {
         return 1;
     }

@@ -590,6 +590,7 @@ static void handle_touch(void)
     }
 
     if (touch_was_click(first) && handle_construction_buttons(first->current_point.x, first->current_point.y, 1)) {
+        data.capture_input = 0;
         return;
     }
 
@@ -736,6 +737,7 @@ void widget_city_handle_input_military(const mouse *m, const hotkeys *h, int leg
             return;
         }
         if (touch_was_click(t) && handle_play_pause_button(t)) {
+            data.capture_input = 0;
             return;
         }
         if (t->has_started) {

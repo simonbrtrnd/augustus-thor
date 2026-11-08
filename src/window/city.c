@@ -952,9 +952,11 @@ static void handle_input_military(const mouse *m, const hotkeys *h)
 
 static void handle_second_screen_input(const mouse *m)
 {
-    if (!building_construction_in_progress()) {
-        widget_sidebar_city_handle_panel_mouse(m);
+    if (m->left.went_down && building_construction_in_progress()) {
+        building_construction_cancel();
+        window_request_refresh();
     }
+    widget_sidebar_city_handle_panel_mouse(m);
 }
 
 static void get_tooltip(tooltip_context *c)

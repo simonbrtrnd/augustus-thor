@@ -147,7 +147,7 @@ static image_button buttons_top_expanded[] = {
     {123, 184, 33, 22, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
-static const panel_area panel_date = {4, 4, 134, 31};
+static const panel_area panel_date = {140, 4, 166, 31};
 static const panel_area panel_minimap = {4, 136, 134, 97};
 
 enum {
@@ -160,15 +160,15 @@ enum {
 };
 
 static generic_button panel_text_buttons[PANEL_TEXT_BUTTONS] = {
-    [PANEL_BUTTON_FUNDS] = {140, 4, 82, 31, button_panel_advisor, 0, ADVISOR_FINANCIAL},
-    [PANEL_BUTTON_POPULATION] = {224, 4, 82, 31, button_panel_advisor, 0, ADVISOR_POPULATION},
+    [PANEL_BUTTON_FUNDS] = {140, 37, 82, 31, button_panel_advisor, 0, ADVISOR_FINANCIAL},
+    [PANEL_BUTTON_POPULATION] = {224, 37, 82, 31, button_panel_advisor, 0, ADVISOR_POPULATION},
     [PANEL_BUTTON_RATINGS] = {4, 37, 134, 64, button_panel_advisor, 0, ADVISOR_RATINGS},
     [PANEL_BUTTON_OVERLAY] = {4, 103, 134, 31, button_panel_overlay},
-    [PANEL_BUTTON_MENU] = {140, 37, 110, 31, button_panel_menu},
+    [PANEL_BUTTON_MENU] = {37, 4, 101, 31, button_panel_menu},
 };
 
 static image_button panel_button_pause[] = {
-    {252, 37, 54, 31, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, PANEL_ASSETS, "pause"},
+    {4, 4, 31, 31, IB_NORMAL, 0, 0, button_toggle_pause, button_none, 0, 0, 1, PANEL_ASSETS, "pause"},
 };
 
 static image_button panel_buttons_advisors_empire[] = {

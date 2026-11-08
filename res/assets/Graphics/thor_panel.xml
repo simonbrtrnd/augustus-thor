@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!DOCTYPE assetlist>
+<!-- Each button lists its normal, hover, pressed and disabled images, as the game expects -->
+<assetlist name="Thor_Panel">
+	<image src="gray-stone" id="gray-stone"/>
+	<image src="pause" id="pause"/>
+	<image src="play" id="play"/>
+	<image src="housing_normal" id="housing"/>
+	<image group="this" image="housing"/>
+	<image src="housing_pressed"/>
+	<image src="housing_disabled"/>
+	<image src="clear-land_normal" id="clear-land"/>
+	<image group="this" image="clear-land"/>
+	<image src="clear-land_pressed"/>
+	<image src="clear-land_disabled"/>
+	<image src="roads_normal" id="roads"/>
+	<image group="this" image="roads"/>
+	<image src="roads_pressed"/>
+	<image src="roads_disabled"/>
+	<image src="water_normal" id="water"/>
+	<image group="this" image="water"/>
+	<image src="water_pressed"/>
+	<image src="water_disabled"/>
+	<image src="health_normal" id="health"/>
+	<image group="this" image="health"/>
+	<image src="health_pressed"/>
+	<image src="health_disabled"/>
+	<image src="temples_normal" id="temples"/>
+	<image group="this" image="temples"/>
+	<image src="temples_pressed"/>
+	<image src="temples_disabled"/>
+	<image src="education_normal" id="education"/>
+	<image group="this" image="education"/>
+	<image src="education_pressed"/>
+	<image src="education_disabled"/>
+	<image src="entertainment_normal" id="entertainment"/>
+	<image group="this" image="entertainment"/>
+	<image src="entertainment_pressed"/>
+	<image src="entertainment_disabled"/>
+	<image src="administration_normal" id="administration"/>
+	<image group="this" image="administration"/>
+	<image src="administration_pressed"/>
+	<image src="administration_disabled"/>
+	<image src="engineering_normal" id="engineering"/>
+	<image group="this" image="engineering"/>
+	<image src="engineering_pressed"/>
+	<image src="engineering_disabled"/>
+	<image src="security_normal" id="security"/>
+	<image group="this" image="security"/>
+	<image src="security_pressed"/>
+	<image src="security_disabled"/>
+	<image src="industry_normal" id="industry"/>
+	<image group="this" image="industry"/>
+	<image src="industry_pressed"/>
+	<image src="industry_disabled"/>
+	<image src="undo_normal" id="undo"/>
+	<image group="this" image="undo"/>
+	<image src="undo_pressed"/>
+	<image src="undo_disabled"/>
+	<image src="messages_normal" id="messages"/>
+	<image group="this" image="messages"/>
+	<image src="messages_pressed"/>
+	<image src="messages_disabled"/>
+	<image src="go-to-problem_normal" id="go-to-problem"/>
+	<image group="this" image="go-to-problem"/>
+	<image src="go-to-problem_pressed"/>
+	<image src="go-to-problem_disabled"/>
+	<image src="grid_normal" id="grid"/>
+	<image group="this" image="grid"/>
+	<image src="grid_pressed"/>
+	<image src="rotate-north_normal" id="rotate-north"/>
+	<image group="this" image="rotate-north"/>
+	<image src="rotate-north_pressed"/>
+	<image src="rotate-left_normal" id="rotate-left"/>
+	<image group="this" image="rotate-left"/>
+	<image src="rotate-left_pressed"/>
+	<image src="rotate-right_normal" id="rotate-right"/>
+	<image group="this" image="rotate-right"/>
+	<image src="rotate-right_pressed"/>
+	<image src="advisors_normal" id="advisors"/>
+	<image group="this" image="advisors"/>
+	<image src="advisors_pressed"/>
+	<image src="empire_normal" id="empire"/>
+	<image group="this" image="empire"/>
+	<image src="empire_pressed"/>
+</assetlist>

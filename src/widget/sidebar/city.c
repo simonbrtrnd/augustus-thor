@@ -64,6 +64,7 @@
 #define PANEL_BOX_COLOR 0xff313131
 #define PANEL_BOX_BORDER_COLOR 0xff121212
 #define PANEL_ASSETS "Thor_Panel"
+#define MINIMAP_GLIDE_PERCENT 35
 #define PANEL_IMAGE_SCALE 4.0f
 #define PANEL_MESSAGE_COUNT_FONT FONT_NORMAL_PLAIN
 #define PANEL_MESSAGE_COUNT_CAP_HEIGHT 11
@@ -206,6 +207,12 @@ static image_button panel_buttons_views[] = {
 
 static struct {
     int focus_button_for_tooltip;
+    int is_dragging_minimap;
+    struct {
+        int is_active;
+        int x;
+        int y;
+    } glide_target;
 } data;
 
 static void draw_overlay_text(int x_offset)
@@ -641,9 +648,66 @@ static int is_in_rect(const mouse *m, int x, int y, int width, int height)
     return m->x >= x && m->x < x + width && m->y >= y && m->y < y + height;
 }
 
+static int get_glide_step(int distance)
+{
+    int step = distance * MINIMAP_GLIDE_PERCENT / 100;
+    if (step == 0 && distance != 0) {
+        step = distance > 0 ? 1 : -1;
+    }
+    return step;
+}
+
+void widget_sidebar_city_glide_camera(void)
+{
+    if (!data.glide_target.is_active) {
+        return;
+    }
+    int x, y;
+    city_view_get_camera_in_pixels(&x, &y);
+    city_view_scroll(get_glide_step(data.glide_target.x - x), get_glide_step(data.glide_target.y - y));
+    int new_x, new_y;
+    city_view_get_camera_in_pixels(&new_x, &new_y);
+    if (new_x == x && new_y == y) {
+        data.glide_target.is_active = 0;
+    }
+}
+
+static int glide_to_minimap_point(const mouse *m)
+{
+    int x, y;
+    city_view_get_camera_in_pixels(&x, &y);
+    if (!widget_minimap_handle_mouse(m)) {
+        return 0;
+    }
+    city_view_get_camera_in_pixels(&data.glide_target.x, &data.glide_target.y);
+    city_view_scroll(x - data.glide_target.x, y - data.glide_target.y);
+    data.glide_target.is_active = 1;
+    return 1;
+}
+
+static int handle_panel_minimap(const mouse *m)
+{
+    if (m->left.went_down) {
+        data.is_dragging_minimap = glide_to_minimap_point(m);
+        return data.is_dragging_minimap;
+    }
+    if (!m->left.is_down) {
+        int was_dragging = data.is_dragging_minimap;
+        data.is_dragging_minimap = 0;
+        return was_dragging || widget_minimap_handle_mouse(m);
+    }
+    if (!data.is_dragging_minimap) {
+        return 0;
+    }
+    mouse drag = *m;
+    drag.left.went_down = 1;
+    glide_to_minimap_point(&drag);
+    return 1;
+}
+
 int widget_sidebar_city_handle_panel_mouse(const mouse *m)
 {
-    if (widget_minimap_handle_mouse(m)) {
+    if (handle_panel_minimap(m)) {
         return 1;
     }
     return generic_buttons_handle_mouse(m, 0, 0, panel_text_buttons, PANEL_TEXT_BUTTONS, 0) ||

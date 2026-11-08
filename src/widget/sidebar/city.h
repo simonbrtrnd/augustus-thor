@@ -30,6 +30,12 @@ int widget_sidebar_city_handle_mouse_build_menu(const mouse *m);
 int widget_sidebar_city_get_tooltip_text(tooltip_context *c);
 
 void widget_sidebar_city_draw_panel(void);
+
+/**
+ * Moves the camera a step towards the point last touched on the panel minimap, so a drag glides.
+ */
+void widget_sidebar_city_glide_camera(void);
+
 void widget_sidebar_city_draw_panel_background(void);
 int widget_sidebar_city_handle_panel_mouse(const mouse *m);
 

@@ -300,6 +300,7 @@ static void draw_speedrun_info(void)
 
 static void draw_foreground(void)
 {
+    widget_sidebar_city_glide_camera();
     widget_top_menu_draw(0);
     window_city_draw();
     if (!second_screen_draw(widget_sidebar_city_draw_panel)) {

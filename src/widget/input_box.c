@@ -16,15 +16,27 @@
 static void button_clear_text(int param1, int param2);
 
 static uint8_t *text_to_clear;
+static const input_box *focused_box;
+static const input_box *touch_box;
 
 static image_button clear_text_button = {
     0, 0, 39, 26, IB_NORMAL, GROUP_OK_CANCEL_SCROLL_BUTTONS, 4, button_clear_text, button_none, 0, 0, 1
 };
 
-void input_box_start(input_box *box)
+static void start_capture(const input_box *box)
 {
     int text_width = (box->width_blocks - 2) * BLOCK_SIZE - 35;
     keyboard_start_capture(box->text, box->text_length, box->allow_punctuation, text_width, box->font, box->allowed_chars);
+    focused_box = box;
+}
+
+static int is_focused(const input_box *box)
+{
+    return focused_box == box && keyboard_is_capturing();
+}
+
+static void lay_out(input_box *box)
+{
     clear_text_button.x_offset = box->x + box->width_blocks * 16;
     if (!box->put_clear_button_outside_box) {
         clear_text_button.x_offset -= CLEAR_BUTTON_WIDTH;
@@ -39,12 +51,26 @@ void input_box_start(input_box *box)
     }
 }
 
+void input_box_start(input_box *box)
+{
+    lay_out(box);
+    start_capture(box);
+}
+
+void input_box_show(input_box *box)
+{
+    lay_out(box);
+    touch_box = box;
+}
+
 void input_box_stop(input_box *box)
 {
     free(box->old_text);
     box->old_text = 0;
     keyboard_stop_capture();
     system_keyboard_set_input_rect(0, 0, 0, 0);
+    focused_box = 0;
+    touch_box = 0;
 }
 
 void input_box_refresh_text(input_box *box)
@@ -52,7 +78,9 @@ void input_box_refresh_text(input_box *box)
     if (box->old_text) {
         string_copy(box->text, box->old_text, box->text_length);
     }
-    keyboard_refresh();
+    if (is_focused(box)) {
+        keyboard_refresh();
+    }
 }
 
 int input_box_is_accepted(void)
@@ -69,11 +97,15 @@ static int is_mouse_inside_input(const mouse *m, const input_box *box)
 void input_box_draw(const input_box *box)
 {
     inner_panel_draw(box->x, box->y, box->width_blocks, box->height_blocks);
-    text_capture_cursor(keyboard_cursor_position(), keyboard_offset_start(), keyboard_offset_end());
     int text_x = box->x + 16;
     int text_y = box->y + 10;
-    text_draw(box->text, text_x, text_y, box->font, 0);
-    text_draw_cursor(text_x, text_y + 1, keyboard_is_insert());
+    if (is_focused(box)) {
+        text_capture_cursor(keyboard_cursor_position(), keyboard_offset_start(), keyboard_offset_end());
+        text_draw(box->text, text_x, text_y, box->font, 0);
+        text_draw_cursor(text_x, text_y + 1, keyboard_is_insert());
+    } else {
+        text_draw_ellipsized(box->text, text_x, text_y, box->width_blocks * BLOCK_SIZE - 32, box->font, 0);
+    }
 
     if (!*box->text && box->placeholder) {
         int width = box->width_blocks * BLOCK_SIZE - 32;
@@ -101,6 +133,14 @@ int input_box_handle_mouse(const mouse *m, const input_box *box)
         return 0;
     }
     int selected = is_mouse_inside_input(m, box);
+    if (box == touch_box) {
+        if (selected && !is_focused(box)) {
+            start_capture(box);
+        } else if (!selected && is_focused(box)) {
+            keyboard_stop_capture();
+            focused_box = 0;
+        }
+    }
     if (selected) {
         system_keyboard_show();
     } else {
@@ -113,6 +153,8 @@ static void button_clear_text(int param1, int param2)
 {
     if (text_to_clear) {
         *text_to_clear = 0;
-        keyboard_refresh();
+        if (keyboard_is_capturing()) {
+            keyboard_refresh();
+        }
     }
 }

@@ -2,10 +2,8 @@ package com.github.Keriew.augustus;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.view.MotionEvent;
 
 import org.libsdl.app.SDLActivity;
-import org.libsdl.app.TextInputScreen;
 
 public class AugustusMainActivity extends SDLActivity {
     private static final int GET_FOLDER_RESULT = 500;
@@ -22,14 +20,6 @@ public class AugustusMainActivity extends SDLActivity {
     protected void onPause() {
         bottomScreen.hide();
         super.onPause();
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            TextInputScreen.moveToGameScreen();
-        }
-        return super.dispatchTouchEvent(event);
     }
 
     @Override

@@ -64,9 +64,9 @@ On the top screen, tap to click, drag to move the map and pinch to zoom.
 On the bottom screen, tap a button to use it. A button that opens a window on
 top closes it when you tap it again. Drag to scroll a long window.
 
-> [!TIP]
-> Android opens the keyboard on the screen you touched last. If it opens on top
-> when you name a save, tap the bottom screen to move it down.
+To type a save name or a filter, tap the text field. The keyboard opens on the
+top screen. While a save, load or delete window is open, tapping the bottom
+screen closes it and does what you tapped.
 
 ## One screen or two
 

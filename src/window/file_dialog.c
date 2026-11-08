@@ -22,7 +22,6 @@
 #include "game/file_editor.h"
 #include "game/file_io.h"
 #include "game/save_version.h"
-#include "game/system.h"
 #include "graphics/button.h"
 #include "graphics/generic_button.h"
 #include "graphics/graphics.h"
@@ -31,7 +30,6 @@
 #include "graphics/lang_text.h"
 #include "graphics/list_box.h"
 #include "graphics/panel.h"
-#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
@@ -46,6 +44,7 @@
 #include "scenario/property.h"
 #include "translation/translation.h"
 #include "widget/input_box.h"
+#include "widget/sidebar/city.h"
 #include "window/city.h"
 #include "window/editor/custom_messages.h"
 #include "window/editor/empire.h"
@@ -312,7 +311,7 @@ static void init(file_type type, file_dialog_type dialog_type)
         main_input.put_clear_button_outside_box = 1;
     }
 
-    input_box_start(&main_input);
+    input_box_show(&main_input);
 }
 
 static void draw_mission_info(int x_offset, int y_offset, int box_size)
@@ -538,6 +537,14 @@ static void handle_input(const mouse *m, const hotkeys *h)
         input_box_stop(&main_input);
         window_go_back();
         return;
+    }
+}
+
+static void handle_second_screen_input(const mouse *m)
+{
+    if (m->left.went_up) {
+        input_box_stop(&main_input);
+        widget_sidebar_city_handle_panel_mouse_over_window(m);
     }
 }
 
@@ -886,12 +893,10 @@ void window_file_dialog_show(file_type type, file_dialog_type dialog_type)
         draw_background,
         draw_foreground,
         handle_input,
-        handle_tooltip
+        handle_tooltip,
+        0,
+        handle_second_screen_input
     };
     init(type, dialog_type);
     window_show(&window);
-    if (dialog_type == FILE_DIALOG_SAVE && second_screen_is_current()) {
-        // Android opens the keyboard on the screen touched last, so a save started below types there
-        system_keyboard_show();
-    }
 }

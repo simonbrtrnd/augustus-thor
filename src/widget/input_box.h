@@ -34,6 +34,13 @@ typedef struct {
  * @param box Input box
  */
 void input_box_start(input_box *box);
+
+/**
+ * Shows the box without taking text input. A touch on the box starts the input, and a touch
+ * elsewhere ends it, until @link input_box_stop @endlink is called
+ * @param box Input box
+ */
+void input_box_show(input_box *box);
 void input_box_stop(input_box *box);
 
 void input_box_refresh_text(input_box *box);

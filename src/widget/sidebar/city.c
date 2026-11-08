@@ -642,12 +642,31 @@ static int is_on_panel_button(const mouse *m, const image_button *button)
     return is_in_rect(m, button->x_offset, button->y_offset, button->width, button->height);
 }
 
+static int is_on_button_of_shown_window(const mouse *m)
+{
+    if (window_is(WINDOW_EMPIRE)) {
+        return is_on_panel_button(m, &panel_buttons_advisors_empire[1]);
+    }
+    if (!window_is(WINDOW_ADVISORS)) {
+        return 0;
+    }
+    for (int i = 0; i < PANEL_TEXT_BUTTONS; i++) {
+        const generic_button *button = &panel_text_buttons[i];
+        if (button->left_click_handler == button_panel_advisor &&
+            button->parameter1 == (int) window_advisors_get_advisor() &&
+            is_in_rect(m, button->x, button->y, button->width, button->height)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void widget_sidebar_city_handle_panel_mouse_over_window(const mouse *m)
 {
     if (!m->left.went_up) {
         return;
     }
-    int closes_window = window_is(WINDOW_EMPIRE) && is_on_panel_button(m, &panel_buttons_advisors_empire[1]);
+    int closes_window = is_on_button_of_shown_window(m);
     window_city_show();
     if (!closes_window) {
         widget_sidebar_city_handle_panel_mouse(m);

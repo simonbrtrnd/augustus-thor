@@ -23,10 +23,15 @@ static image_button clear_text_button = {
     0, 0, 39, 26, IB_NORMAL, GROUP_OK_CANCEL_SCROLL_BUTTONS, 4, button_clear_text, button_none, 0, 0, 1
 };
 
+static int get_text_width(const input_box *box)
+{
+    return (box->width_blocks - 2) * BLOCK_SIZE - 35;
+}
+
 static void start_capture(const input_box *box)
 {
-    int text_width = (box->width_blocks - 2) * BLOCK_SIZE - 35;
-    keyboard_start_capture(box->text, box->text_length, box->allow_punctuation, text_width, box->font, box->allowed_chars);
+    keyboard_start_capture(box->text, box->text_length, box->allow_punctuation, get_text_width(box), box->font,
+        box->allowed_chars);
     focused_box = box;
 }
 
@@ -104,7 +109,7 @@ void input_box_draw(const input_box *box)
         text_draw(box->text, text_x, text_y, box->font, 0);
         text_draw_cursor(text_x, text_y + 1, keyboard_is_insert());
     } else {
-        text_draw_ellipsized(box->text, text_x, text_y, box->width_blocks * BLOCK_SIZE - 32, box->font, 0);
+        text_draw_ellipsized(box->text, text_x, text_y, get_text_width(box), box->font, 0);
     }
 
     if (!*box->text && box->placeholder) {

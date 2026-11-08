@@ -59,10 +59,13 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 
 ## Touch
 
-On the top screen, tap to click, drag to move the map and pinch to zoom.
+On the top screen, tap to click, drag to move the map and pinch to zoom. To
+build, draw a road or place a building, then tap the check button at the top
+right to confirm it, or the cross to cancel.
 
 On the bottom screen, tap a button to use it. A button that opens a window on
-top closes it when you tap it again. Drag to scroll a long window.
+top closes it when you tap it again. Drag on the minimap to move the view, and
+drag in a long window to scroll it.
 
 To type a save name or a filter, tap the text field. The keyboard opens on the
 top screen. While a save, load or delete window is open, tapping the bottom

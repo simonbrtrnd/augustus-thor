@@ -11,6 +11,7 @@
 #include "core/config.h"
 #include "core/direction.h"
 #include "core/locale.h"
+#include "core/string.h"
 #include "core/time.h"
 #include "game/campaign.h"
 #include "game/orientation.h"
@@ -64,8 +65,11 @@
 #define PANEL_BOX_BORDER_COLOR 0xff121212
 #define PANEL_ASSETS "Thor_Panel"
 #define PANEL_IMAGE_SCALE 4.0f
-#define MESSAGE_COUNT_RIGHT_MARGIN 6
-#define MESSAGE_COUNT_TOP_MARGIN 5
+#define PANEL_MESSAGE_COUNT_FONT FONT_NORMAL_PLAIN
+#define PANEL_MESSAGE_COUNT_CAP_HEIGHT 11
+#define PANEL_MESSAGE_COUNT_LARGE_MAX 99
+#define PANEL_MESSAGE_COUNT_CENTER_X 38
+#define PANEL_MESSAGE_COUNT_CENTER_Y 15
 
 typedef struct {
     int x;
@@ -587,6 +591,23 @@ static void update_panel_buttons(void)
     panel_button_pause[0].image_name = game_state_is_paused() ? "play" : "pause";
 }
 
+static void draw_panel_message_count(const image_button *button)
+{
+    int messages = city_message_count();
+    int is_large = messages <= PANEL_MESSAGE_COUNT_LARGE_MAX;
+    font_t font = is_large ? PANEL_MESSAGE_COUNT_FONT : PANEL_FONT;
+    int cap_height = is_large ? PANEL_MESSAGE_COUNT_CAP_HEIGHT : PANEL_FONT_CAP_HEIGHT;
+    uint8_t count[12];
+    string_from_int(count, messages, 0);
+    int x = button->x_offset + PANEL_MESSAGE_COUNT_CENTER_X - text_get_width(count, font) / 2;
+    int y = button->y_offset + PANEL_MESSAGE_COUNT_CENTER_Y - cap_height / 2;
+    text_draw(count, x, y - 1, font, COLOR_BLACK);
+    text_draw(count, x, y + 1, font, COLOR_BLACK);
+    text_draw(count, x - 1, y, font, COLOR_BLACK);
+    text_draw(count, x + 1, y, font, COLOR_BLACK);
+    text_draw(count, x, y, font, COLOR_WHITE);
+}
+
 void widget_sidebar_city_draw_panel(void)
 {
     second_screen_draw_marble_background();
@@ -603,10 +624,8 @@ void widget_sidebar_city_draw_panel(void)
     draw_panel_buttons(panel_buttons_advisors_empire, 2);
     draw_panel_buttons(panel_buttons_build, 12);
     draw_panel_buttons(panel_buttons_tools, 3);
-    const image_button *messages = &panel_buttons_tools[1];
-    if (messages->enabled) {
-        draw_message_count(messages->x_offset + messages->width - MESSAGE_COUNT_RIGHT_MARGIN,
-            messages->y_offset + MESSAGE_COUNT_TOP_MARGIN);
+    if (panel_buttons_tools[1].enabled) {
+        draw_panel_message_count(&panel_buttons_tools[1]);
     }
 }
 

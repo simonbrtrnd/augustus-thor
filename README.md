@@ -1,79 +1,147 @@
-# Augustus ![](res/julius_48.png)
+> [!IMPORTANT]
+> Just so you know, this whole fork was built with Claude, Anthropic's AI
+> assistant, in Claude Code. I decided what to build and tried every change on
+> my Thor.
 
-[![Github Actions](https://github.com/Keriew/augustus/workflows/Build%20Augustus/badge.svg)](https://github.com/Keriew/Augustus/actions)
+# Caesar III Thor
 
- **💬 Join the Augustus Community - players, mapmakers, and developers**  
-[![Discord](https://img.shields.io/badge/Discord-TheZakhcolytes-5865F2?logo=discord&logoColor=white)](https://discord.gg/GamerZakh)  
-kindly hosted by GamerZakh.
+Caesar III (1998) on the AYN Thor, using both screens. It's a fork of
+[Augustus](https://github.com/Keriew/augustus), an open-source engine that runs
+the original game from your own copy.
 
- **📜 Share Maps, Campaigns and Scenarios**  
-[![AugustusScernarios](https://augustus.josecadete.net/badge/c3-heaven.svg)](https://caesar3.heavengames.com/downloads/lister.php?&category=augustus_scen&start=0&s=dls&o=d)  
-Download Julius and Augustus scenarios, create your own and share with others! 
+- The top screen shows only the city, over its full height.
+- The bottom touchscreen holds the whole sidebar: date, treasury, population,
+  ratings, minimap, build buttons and menus. Its buttons are redrawn in HD.
+- Messages, building info and small popups open on the bottom screen, so they
+  never cover the city.
+- The Thor's controls are mapped: the left stick moves the cursor, the right
+  stick moves the map and the triggers zoom.
 
-| Platform | Latest release | Unstable build |
-|----------|----------------|----------------|
-| Windows - 64 bit| Next release! |[![Download](https://augustus.josecadete.net/badge/development/windows-64bit.svg)](https://augustus.josecadete.net/download/latest/development/windows-64bit)   [(Download development assets)](https://augustus.josecadete.net/download/latest/development/assets)
-| Windows - 32 bit  | [![Download](https://augustus.josecadete.net/badge/release/windows.svg)](https://augustus.josecadete.net/download/latest/release/windows)|[![Download](https://augustus.josecadete.net/badge/development/windows.svg)](https://augustus.josecadete.net/download/latest/development/windows)
-| Linux AppImage | [![Download](https://augustus.josecadete.net/badge/release/linux-appimage.svg)](https://augustus.josecadete.net/download/latest/release/linux-appimage) | [![Download](https://augustus.josecadete.net/badge/development/linux-appimage.svg)](https://augustus.josecadete.net/download/latest/development/linux-appimage)
-| Linux Flatpak | Next release! | [![Download](https://augustus.josecadete.net/badge/development/linux-flatpak.svg)](https://augustus.josecadete.net/download/latest/development/linux-flatpak)
-| Mac | [![Download](https://augustus.josecadete.net/badge/release/mac.svg)](https://augustus.josecadete.net/download/latest/release/mac) | [![Download](https://augustus.josecadete.net/badge/development/mac.svg)](https://augustus.josecadete.net/download/latest/development/mac) |
-| PS Vita | [![Download](https://augustus.josecadete.net/badge/release/vita.svg)](https://augustus.josecadete.net/download/latest/release/vita)| [![Download](https://augustus.josecadete.net/badge/development/vita.svg)](https://augustus.josecadete.net/download/latest/development/vita) |
-| Switch |  [![Download](https://augustus.josecadete.net/badge/release/switch.svg)](https://augustus.josecadete.net/download/latest/release/switch) | [![Download](https://augustus.josecadete.net/badge/development/switch.svg)](https://augustus.josecadete.net/download/latest/development/switch) |
-| Android APK |  [![Download](https://augustus.josecadete.net/badge/release/android.svg)](https://augustus.josecadete.net/download/latest/release/android) | [![Download](https://augustus.josecadete.net/badge/development/android.svg)](https://augustus.josecadete.net/download/latest/development/android) |
+Smaller improvements:
 
+- The zoom steps through fixed levels. Held, a trigger zooms smoothly and
+  pauses on 100% and 50%.
+- The keyboard for naming a save opens on the bottom screen, over a dimmed
+  panel.
+- Tap a panel button again to close the window it opened on the top screen.
 
-Alternatively, you can [**try Augustus in your browser**](https://augustus.josecadete.net/play/). Note that you'll still need to provide a valid Caesar 3 installation folder.
+<p align="center">
+  <img src="doc/thor/top-screen.png" width="640" alt="The city on the Thor's top screen">
+  <br>
+  <img src="doc/thor/bottom-screen.png" width="413" alt="The panel on the Thor's bottom screen">
+</p>
 
+## What you need
 
-Augustus is a fork of the Julius project that intends to incorporate gameplay changes.
-=======
-The aim of this project is to provide enhanced, customizable gameplay to Caesar 3 using project Julius UI enhancements.
+- An AYN Thor (tested on Android 13).
+- The game files of Caesar III, patched to version 1.0.1.0. A copy from the
+  CD, GOG or Steam works.
 
-Augustus is able to load Caesar 3 and Julius saves, however saves made with Augustus **will not work** outside Augustus.
+> [!NOTE]
+> This repository and the APK contain no game files.
 
-Gameplay enhancements include:
-- Roadblocks
-- Market special orders
-- Global labour pool
-- Partial warehouse storage
-- Increased game limits
-- Zoom controls
-- And more!
+## Install
 
-Because of gameplay changes and additions, save files from Augustus are NOT compatible with Caesar 3 or Julius. Augustus is able to load Caesar 3 save files, but not the other way around. If you want vanilla experience with visual and UI improvements, or want to use save files in base Caesar 3, check [Julius](https://github.com/bvschaik/julius).
+1. Download the APK from the
+   [releases](https://github.com/simonbrtrnd/augustus-thor/releases) and open
+   it on the Thor. The app is called Caesar III and installs alongside the
+   official Augustus app.
 
-Augustus, like Julius, requires the original assets (graphics, sounds, etc) from Caesar 3 to run. Augustus optionally [supports the high-quality MP3 files](https://github.com/bvschaik/julius/wiki/MP3-Support) once provided on the Sierra website.
+2. Copy your Caesar III folder to the Thor, such as to the SD card. It holds
+   files such as `C3.sg2` and `C3.555`.
 
-[![](doc/main-image.png)](https://github.com/user-attachments/assets/5027579d-4277-4b1f-9eca-297a04cb1c79)
+3. Open Caesar III and pick that folder when the app asks for it. Saves are
+   stored in the same folder.
 
-## Running the game
+## Controller
 
-First, download the game for your platform from the list above.
+Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 
-Alternatively, you can build Augustus yourself. Check [Building Julius](doc/BUILDING.md)
-for details.
+| Button | Action |
+| --- | --- |
+| Left stick | Move the cursor |
+| Right stick | Move the map, or scroll a window |
+| B | Left click |
+| A | Right click |
+| Y | Pause |
+| X | Hide or show the current overlay |
+| L1, R1 | Rotate the map left, right |
+| L2, R2 | Zoom out, zoom in; hold to zoom smoothly |
+| D-pad up, down | Game speed up, down |
+| D-pad left, right | Previous, next overlay |
+| Select | Move messages and building info to the top screen and back |
 
-Then you can either copy the game to the Caesar 3 folder, or run the game from an independent
-folder, in which case the game will ask you to point to the Caesar 3 folder.
+## Touch
 
-Note that you must have permission to write in the game data directory as the saves will be
-stored there. Also, your game must be patched to 1.0.1.0 to use Augustus. If Augustus tells you that
-you are missing it, you can [download the update here](https://github.com/bvschaik/julius/wiki/Patches).
+Top screen:
 
-See [Running Julius](https://github.com/bvschaik/julius/wiki/Running-Julius) for further instructions and startup options.
+| Gesture | Action |
+| --- | --- |
+| Tap | Left click; with nothing to build, tap a building to see its info |
+| Drag | Move the map |
+| Pinch | Zoom |
 
-## Manual
+Bottom screen:
 
-Augustus changes are explained in detail in the comprehensive manual. Below you can find the links to the manual in a few language versions.
+| Gesture | Action |
+| --- | --- |
+| Tap a build button | Pick what to build; most buttons open a list |
+| Tap Menu | Save, load, and the file, options and help menus |
+| Tap the overlay plate | Choose an overlay, such as water or fire risk |
+| Tap the advisors | Choose an advisor |
+| Tap the treasury, population or ratings | Open that advisor; tap again to close it |
+| Tap the empire map | Open it; tap again to close it |
+| Tap the minimap | Move the view there |
+| Drag in a long window | Scroll it |
 
-| Language | Manual |
-|----------|--------|
-|English   |[Download](https://github.com/Keriew/augustus/raw/master/res/manual/augustus_manual_en_4_0.pdf)|
-|Chinese   |[Download](https://github.com/Keriew/augustus/raw/master/res/translated_manuals/augustus_manual_chinese_3.0.pdf)|
-|French   |[Download](https://github.com/Keriew/augustus/raw/master/res/translated_manuals/augustus_manual_fr_4_0.pdf)|
-|Polish   |[Download](https://github.com/Keriew/augustus/raw/master/res/translated_manuals/augustus_manual_polish_3.0.pdf)|
-|Russian   |[Download](https://github.com/Keriew/augustus/raw/master/res/translated_manuals/augustus_manual_russian_3.0.pdf)|
+> [!TIP]
+> Android shows the keyboard on the screen you touched last. Saving from the
+> bottom Menu opens it below. If it pops up on the top screen, tap the bottom
+> screen to move it down.
 
-## Bugs
+## Options
 
-See the list of [Bugs & idiosyncrasies](https://github.com/bvschaik/julius/wiki/Caesar-3-bugs) to find out more about some known bugs.
+Select moves messages, building info and popups between the screens. The
+choice is saved. The game's configuration has the same setting, Show windows
+on the second screen.
+
+The city, the empire map, the advisors, saving, loading and settings always
+stay on the top screen, where they have room.
+
+## Permissions
+
+The app asks for no Android permissions. It only reads and writes the game
+folder you pick.
+
+## Build the APK
+
+With JDK 17, NDK 29.0.14206865 and CMake 4.1.2 from the Android SDK manager:
+
+```sh
+git clone -b thor --recursive https://github.com/simonbrtrnd/augustus-thor.git
+cd augustus-thor
+curl -L https://www.libsdl.org/release/SDL2-2.32.10.tar.gz | tar -xz -C ext/SDL2
+curl -L https://www.libsdl.org/projects/SDL_mixer/release/SDL2_mixer-2.8.2.tar.gz | tar -xz -C ext/SDL2
+cd android
+./gradlew assembleDebug
+```
+
+The APK is created in `android/augustus/build/outputs/apk/debug/`. The project
+path must not contain spaces, since `ndk-build` doesn't handle them.
+
+## Feedback
+
+Feedback is welcome, whether it's a bug, an idea or a question: open an
+[issue](https://github.com/simonbrtrnd/augustus-thor/issues).
+
+## Credits and license
+
+- Augustus is made by Keriew and contributors, from Julius by Bianca van
+  Schaik. Both use the AGPL 3.0 license, and so do this fork's changes. The
+  Augustus [manual](https://github.com/Keriew/augustus/tree/master/res/manual)
+  explains its gameplay changes.
+- The HD panel buttons and the gray stone are redrawn from the game's art,
+  partly with ChatGPT image generation.
+- Caesar III was made by Impressions Games and published by Sierra. This
+  project is not affiliated with or endorsed by the game's rights holders or
+  AYN.

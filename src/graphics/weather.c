@@ -5,6 +5,7 @@
 #include "core/file.h"
 #include "core/random.h"
 #include "game/settings.h"
+#include "game/state.h"
 #include "graphics/color.h"
 #include "graphics/graphics.h"
 #include "graphics/screen.h"
@@ -188,6 +189,17 @@ static int chance_percent(int percent)
     return (random_between_from_stdlib(0, 99) < percent) ? 1 : 0;
 }
 
+static int is_city_paused(void)
+{
+    return window_city_is_window_cityview() && game_state_is_paused();
+}
+
+static int is_weather_moving(weather_type type)
+{
+    // The settings preview keeps moving, so the weather can be judged while the game is paused
+    return window_city_simulated_weather(type) || (window_city_is_window_cityview() && !game_state_is_paused());
+}
+
 static void update_lightning(void)
 {
     if (data.lightning_cooldown <= 0 && (random_from_stdlib() % 500) == 0) {
@@ -271,7 +283,9 @@ static void render_weather_overlay(void)
         return;
     }
 
-    update_overlay_alpha();
+    if (!is_city_paused()) {
+        update_overlay_alpha();
+    }
 
     if (data.overlay_alpha == 0) {
         return;
@@ -310,7 +324,7 @@ static void draw_snow(void)
         return;
     }
 
-    if (window_city_is_window_cityview() || window_city_simulated_weather(WEATHER_SNOW)) {
+    if (is_weather_moving(WEATHER_SNOW)) {
         update_wind();
     }
 
@@ -321,7 +335,7 @@ static void draw_snow(void)
     }
 
     for (int i = 0; i < count; ++i) {
-        if (window_city_is_window_cityview() || window_city_simulated_weather(WEATHER_SNOW)) {
+        if (is_weather_moving(WEATHER_SNOW)) {
             // Slow, bounded horizontal sway around the flake's spawn column.
             // target_drift oscillates in ±10px over ~5 seconds, with a per-flake
             // phase offset so flakes don't sway in unison. We apply the delta
@@ -372,7 +386,7 @@ static void draw_sandstorm(void)
     }
 
     for (int i = 0; i < count; ++i) {
-        if (window_city_is_window_cityview() || window_city_simulated_weather(WEATHER_SAND)) {
+        if (is_weather_moving(WEATHER_SAND)) {
             int wave = ((data.elements[i].y + data.elements[i].offset) % 10) - 5;
             data.elements[i].x += data.elements[i].speed + (wave / 10);
         }
@@ -398,7 +412,7 @@ static void draw_rain(void)
         return;
     }
 
-    if (window_city_is_window_cityview() || window_city_simulated_weather(WEATHER_RAIN)) {
+    if (is_weather_moving(WEATHER_RAIN)) {
         update_wind();
     }
 
@@ -433,7 +447,7 @@ static void draw_rain(void)
             data.elements[i].y + data.elements[i].length,
             COLOR_WEATHER_DROPS);
 
-        if (window_city_is_window_cityview() || window_city_simulated_weather(WEATHER_RAIN)) {
+        if (is_weather_moving(WEATHER_RAIN)) {
             data.elements[i].x += dx;
 
             int dy = base_speed + data.elements[i].speed
@@ -447,7 +461,7 @@ static void draw_rain(void)
         }
     }
 
-    if (data.current_particle_count > 900) {
+    if (data.current_particle_count > 900 && is_weather_moving(WEATHER_RAIN)) {
         update_lightning();
     }
 }
@@ -474,7 +488,9 @@ static void stop_wind_sound(void)
 void update_weather(void)
 {
     render_weather_overlay();
-    update_current_particle_count();
+    if (!is_city_paused()) {
+        update_current_particle_count();
+    }
     if (window_is(WINDOW_CONFIG)) { //preview weather in config menu
         if (config_get(CONFIG_UI_WT_PREVIEW_RAIN)) {
             data.weather_config.type = WEATHER_RAIN;

@@ -460,8 +460,9 @@ static int draw_panel_list_arrow(int x, int y, int width, int height)
 {
     int image_id = assets_get_image_id("UI", "Expand Menu Icon");
     const image *img = image_get(image_id);
-    image_draw(image_id, x + width - PANEL_TEXT_MARGIN - img->width,
-        get_centered_y(y, height, img->height), COLOR_MASK_NONE, SCALE_NONE);
+    int arrow_x = x + width - PANEL_TEXT_MARGIN - img->width;
+    int arrow_y = get_centered_y(y, height, img->height);
+    image_draw(image_id, arrow_x - img->x_offset, arrow_y - img->y_offset, COLOR_MASK_NONE, SCALE_NONE);
     return img->width + PANEL_TEXT_MARGIN;
 }
 

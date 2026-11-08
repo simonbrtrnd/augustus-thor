@@ -17,6 +17,7 @@
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "translation/translation.h"
+#include "widget/sidebar/city.h"
 #include "window/config.h"
 #include "window/hotkey_editor.h"
 #include "window/plain_message_dialog.h"
@@ -467,7 +468,10 @@ void window_hotkey_config_show(int position)
         WINDOW_HOTKEY_CONFIG,
         draw_background,
         draw_foreground,
-        handle_input
+        handle_input,
+        0,
+        0,
+        widget_sidebar_city_handle_panel_mouse_over_window
     };
     init(position);
     window_show(&window);

@@ -66,13 +66,16 @@ right to confirm it, or the cross to cancel.
 With nothing to build, tap anything on the map to see its info below. Tap
 something else to see its info instead, or the same thing again to close it.
 
-On the bottom screen, tap a button to use it. A button that opens a window on
-top closes it when you tap it again. Drag on the minimap to move the view, and
-drag in a long window to scroll it.
+On the bottom screen, tap a button to use it. Drag on the minimap to move the
+view, and drag in a long window to scroll it.
+
+While a window is open on top, tapping the bottom screen closes it, then does
+what you tapped. This works for the advisors, the settings and the save
+windows. Settings you have not applied are lost. Tapping the button that opened
+the window only closes it.
 
 To type a save name or a filter, tap the text field. The keyboard opens on the
-top screen. While a save, load or delete window is open, tapping the bottom
-screen closes it and does what you tapped.
+top screen.
 
 ## One screen or two
 

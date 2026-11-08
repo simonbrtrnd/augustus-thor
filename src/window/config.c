@@ -31,6 +31,7 @@
 #include "sound/music.h"
 #include "sound/speech.h"
 #include "translation/translation.h"
+#include "widget/sidebar/city.h"
 #include "window/hotkey_config.h"
 #include "window/main_menu.h"
 #include "window/plain_message_dialog.h"
@@ -2338,7 +2339,9 @@ void window_config_show(window_config_page page, unsigned int category, int show
         draw_background,
         draw_foreground,
         handle_input,
-        get_tooltip
+        get_tooltip,
+        0,
+        widget_sidebar_city_handle_panel_mouse_over_window
     };
     init(page, category, show_background_image);
     window_show(&window);

@@ -23,7 +23,6 @@ import org.libsdl.app.SDLMotionListener;
  */
 class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View.OnKeyListener {
     private Presentation presentation;
-    private RelativeLayout layout;
 
     void show(Activity activity) {
         if (presentation != null) {
@@ -36,7 +35,7 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
         presentation = new Presentation(activity, display);
         presentation.setCancelable(false);
         Context context = presentation.getContext();
-        layout = new RelativeLayout(context);
+        RelativeLayout layout = new RelativeLayout(context);
         layout.setFocusable(true);
         layout.setFocusableInTouchMode(true);
         layout.setOnKeyListener(this);
@@ -55,7 +54,6 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
         if (presentation != null) {
             presentation.dismiss();
             presentation = null;
-            layout = null;
         }
     }
 

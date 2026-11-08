@@ -197,7 +197,7 @@ static int is_city_paused(void)
 static int is_weather_moving(weather_type type)
 {
     // The settings preview keeps moving, so the weather can be judged while the game is paused
-    return window_city_simulated_weather(type) || (window_city_is_window_cityview() && !game_state_is_paused());
+    return window_city_simulated_weather(type) || (window_city_is_window_cityview() && !is_city_paused());
 }
 
 static void update_lightning(void)

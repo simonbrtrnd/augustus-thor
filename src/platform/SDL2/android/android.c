@@ -16,7 +16,7 @@ jobject jni_get_activity(void)
 
 void platform_show_virtual_keyboard(void)
 {
-    // SDL keeps believing its keyboard is shown after Android hides it for a touch on the bottom screen
+    // SDL keeps believing its keyboard is shown after the player closes it, so a tap on a field always asks again
     SDL_StartTextInput();
 }
 

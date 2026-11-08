@@ -48,7 +48,7 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 | Left stick | Move the cursor |
 | Right stick | Move the map, or scroll a window |
 | B | Left click |
-| A | Right click |
+| A | Right click; shows the info of what is under the cursor |
 | Y | Pause |
 | X | Hide or show the overlay |
 | L1, R1 | Rotate the map |
@@ -62,6 +62,9 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 On the top screen, tap to click, drag to move the map and pinch to zoom. To
 build, draw a road or place a building, then tap the check button at the top
 right to confirm it, or the cross to cancel.
+
+With nothing to build, tap anything on the map to see its info below. Tap
+something else to see its info instead, or the same thing again to close it.
 
 On the bottom screen, tap a button to use it. A button that opens a window on
 top closes it when you tap it again. Drag on the minimap to move the view, and

@@ -30,6 +30,7 @@
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
+#include "input/touch.h"
 #include "map/aqueduct.h"
 #include "map/bridge.h"
 #include "map/building.h"
@@ -1151,8 +1152,43 @@ static int handle_specific_building_info_mouse(const mouse *m)
     return 0;
 }
 
+static int get_city_grid_offset(int x, int y)
+{
+    view_tile tile;
+    return city_view_pixels_to_view_tile(x, y, &tile) ? city_view_tile_to_grid_offset(&tile) : 0;
+}
+
+static int is_shown_in_dialog(int grid_offset)
+{
+    int building_id = map_building_at(grid_offset);
+    if (building_id && context.building_id) {
+        return building_main(building_get(building_id)) == building_main(building_get(context.building_id));
+    }
+    return grid_offset == context.grid_offset;
+}
+
+static int handle_city_tap_beside_dialog(void)
+{
+    const mouse *city_mouse = mouse_get();
+    if (!second_screen_has_dialog() || second_screen_is_current() || !city_mouse->left.went_up) {
+        return 0;
+    }
+    // As in the original game, only a right click shows info, so a left click just closes the dialog
+    int is_tap = city_mouse->is_touch && touch_was_click(touch_get_earliest());
+    int grid_offset = is_tap ? get_city_grid_offset(city_mouse->x, city_mouse->y) : 0;
+    game_state_set_overlay(original_overlay);
+    window_city_show();
+    if (grid_offset && !is_shown_in_dialog(grid_offset)) {
+        window_building_info_show(grid_offset);
+    }
+    return 1;
+}
+
 static void handle_input(const mouse *m, const hotkeys *h)
 {
+    if (handle_city_tap_beside_dialog()) {
+        return;
+    }
     int handled = 0;
     // general buttons
     if (context.terrain_type == TERRAIN_INFO_RUBBLE && context.rubble_building_id) {

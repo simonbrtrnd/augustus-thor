@@ -553,6 +553,9 @@ static void set_texture_color_and_scale_mode(SDL_Texture *texture, color_t color
         desired_scale_mode = SDL_ScaleModeNearest;
     }
     if (current_scale_mode != desired_scale_mode) {
+        // SDL 2's GLES2 renderer binds the texture to change its scale mode without flushing the queued draws,
+        // which then run against this texture
+        SDL_RenderFlush(data.renderer);
         SDL_SetTextureScaleMode(texture, desired_scale_mode);
     }
 #endif

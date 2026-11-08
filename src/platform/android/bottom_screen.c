@@ -9,6 +9,7 @@
 #include <android/input.h>
 #include <android/native_window_jni.h>
 #include <jni.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -62,14 +63,18 @@ static void free_pixels(void)
     frame.shown = SHOWING_NOTHING;
 }
 
+static size_t get_frame_bytes(void)
+{
+    return (size_t) frame.width * frame.height * sizeof(uint32_t);
+}
+
 static int allocate_pixels(void)
 {
     if (frame.pixels) {
         return 1;
     }
-    size_t size = (size_t) frame.width * frame.height * sizeof(uint32_t);
-    frame.pixels = malloc(size);
-    frame.shown_pixels = malloc(size);
+    frame.pixels = malloc(get_frame_bytes());
+    frame.shown_pixels = malloc(get_frame_bytes());
     if (!frame.pixels || !frame.shown_pixels) {
         free_pixels();
         return 0;
@@ -90,7 +95,7 @@ static int is_shown(int has_pixels)
         return frame.shown == SHOWING_BLACK;
     }
     return frame.shown == SHOWING_PIXELS &&
-        memcmp(frame.pixels, frame.shown_pixels, (size_t) frame.width * frame.height * sizeof(uint32_t)) == 0;
+        memcmp(frame.pixels, frame.shown_pixels, get_frame_bytes()) == 0;
 }
 
 static void copy_pixels(const ANativeWindow_Buffer *buffer)
@@ -102,7 +107,6 @@ static void copy_pixels(const ANativeWindow_Buffer *buffer)
     uint32_t *shown_pixels = frame.shown_pixels;
     frame.shown_pixels = frame.pixels;
     frame.pixels = shown_pixels;
-    frame.shown = SHOWING_PIXELS;
 }
 
 static void fill_black(const ANativeWindow_Buffer *buffer)
@@ -111,7 +115,6 @@ static void fill_black(const ANativeWindow_Buffer *buffer)
     for (int i = 0; i < buffer->stride * buffer->height; i++) {
         rows[i] = WINDOW_BLACK;
     }
-    frame.shown = SHOWING_BLACK;
 }
 
 static void show(ANativeWindow *window, int has_pixels)
@@ -125,8 +128,10 @@ static void show(ANativeWindow *window, int has_pixels)
         frame.shown = SHOWING_NOTHING;
     } else if (has_pixels) {
         copy_pixels(&buffer);
+        frame.shown = SHOWING_PIXELS;
     } else {
         fill_black(&buffer);
+        frame.shown = SHOWING_BLACK;
     }
     ANativeWindow_unlockAndPost(window);
 }
@@ -187,15 +192,14 @@ static mouse to_screen_mouse(const touch_event *event)
 
 static void scroll_with_drag(const touch_event *event, const mouse *m)
 {
-    float distance = event->y * frame.height - drag.anchor_y;
-    while (distance <= -DRAG_SCROLL_STEP || distance >= DRAG_SCROLL_STEP) {
-        int direction = distance < 0 ? -1 : 1;
+    float y = event->y * frame.height;
+    while (fabsf(y - drag.anchor_y) >= DRAG_SCROLL_STEP) {
+        int direction = y < drag.anchor_y ? -1 : 1;
         mouse scroll = *m;
         scroll.scrolled = direction < 0 ? SCROLL_DOWN : SCROLL_UP;
         second_screen_handle_input(&scroll);
         drag.anchor_y += direction * DRAG_SCROLL_STEP;
         drag.has_scrolled = 1;
-        distance = event->y * frame.height - drag.anchor_y;
     }
 }
 

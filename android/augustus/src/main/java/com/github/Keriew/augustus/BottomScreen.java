@@ -1,5 +1,6 @@
 package com.github.Keriew.augustus;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Presentation;
 import android.content.Context;
@@ -24,11 +25,8 @@ import org.libsdl.app.SDLActivity;
 import org.libsdl.app.TextInputScreen;
 
 /**
- * The second screen, such as the lower screen of the AYN Thor: a window of its own,
- * whose surface the game draws into and whose touches it reads.
- *
- * A touch there gives that screen the focus. The keys and the controller then come to this window,
- * which passes them on to the game, and the next keyboard opens on this screen.
+ * A touch on the second screen gives it the focus. The keys and the controller then come to this
+ * window, which passes them on to the game, and the next keyboard opens on this screen.
  */
 class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View.OnKeyListener {
     private static final float KEYBOARD_SHADE_ALPHA = 0.6f;
@@ -60,7 +58,10 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
         view.setOnTouchListener(this);
         layout.addView(view, new RelativeLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        followKeyboard(context);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            addKeyboardShade(context, presentation.getWindow());
+            closeKeyboardWhenGameIsDone(presentation.getWindow());
+        }
         presentation.setContentView(layout);
         presentation.show();
         layout.requestFocus();
@@ -74,20 +75,13 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
         }
     }
 
-    /**
-     * Darkens the panel while the keyboard is open on this screen, so the keyboard stands out,
-     * and closes the keyboard once the game is done with it.
-     */
-    private void followKeyboard(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
-        }
+    @TargetApi(Build.VERSION_CODES.R)
+    private void addKeyboardShade(Context context, Window window) {
         View shade = new View(context);
         shade.setBackgroundColor(Color.BLACK);
         shade.setAlpha(0f);
         layout.addView(shade, new RelativeLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        Window window = presentation.getWindow();
         window.setDecorFitsSystemWindows(false);
         window.getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
             boolean isKeyboardShown = insets.isVisible(WindowInsets.Type.ime());
@@ -97,6 +91,10 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
                 .setInterpolator(new DecelerateInterpolator());
             return view.onApplyWindowInsets(insets);
         });
+    }
+
+    @TargetApi(Build.VERSION_CODES.R)
+    private void closeKeyboardWhenGameIsDone(Window window) {
         ViewGroup root = layout;
         root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
             if (TextInputScreen.isKeyboardShown()) {

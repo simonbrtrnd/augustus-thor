@@ -7,7 +7,7 @@ import android.widget.RelativeLayout;
 /**
  * Moves SDL's hidden text editor to the window of another screen.
  * Android opens the keyboard on the screen whose window holds the focused editor.
- * This class lives in SDL's package because the editor and its fields are package-private.
+ * This class lives in SDL's package because the editor class is package-private.
  */
 public final class TextInputScreen {
     private TextInputScreen() {

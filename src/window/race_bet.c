@@ -148,7 +148,7 @@ static void draw_foreground(void)
 
 static void handle_input(const mouse *m, const hotkeys *h)
 {
-    const mouse *m_dialog = mouse_in_dialog_with_size(m, data.width_blocks * BLOCK_SIZE, data.height_blocks * BLOCK_SIZE);
+    const mouse *m_dialog = mouse_in_dialog(m);
 
     if (image_buttons_handle_mouse(m_dialog, 0, 0, image_button_close, 1, &data.focus_image_button_id)) {
         return;

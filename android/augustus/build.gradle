@@ -101,11 +101,11 @@ android {
                 storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias "augustus"
                 keyPassword System.getenv("ANDROID_KEYSTORE_KEY_PASSWORD")
-            } else if (project.findProperty("thor.keystore")) {
-                storeFile file(project.findProperty("thor.keystore"))
-                storePassword project.findProperty("thor.keystorePassword")
-                keyAlias project.findProperty("thor.keyAlias")
-                keyPassword project.findProperty("thor.keyPassword")
+            } else if (project.findProperty("caesar3thor.keystore")) {
+                storeFile file(project.findProperty("caesar3thor.keystore"))
+                storePassword project.findProperty("caesar3thor.keystorePassword")
+                keyAlias project.findProperty("caesar3thor.keyAlias")
+                keyPassword project.findProperty("caesar3thor.keyPassword")
             }
         }
     }

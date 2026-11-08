@@ -151,7 +151,7 @@ static const char *ini_keys[] = {
     "close",
     "show_next_overlay",
     "show_previous_overlay",
-    "toggle_dialogs_screen"
+    "toggle_second_screen"
 };
 
 static struct {

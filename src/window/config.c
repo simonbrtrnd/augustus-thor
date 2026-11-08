@@ -21,6 +21,7 @@
 #include "graphics/panel.h"
 #include "graphics/screen.h"
 #include "graphics/scrollbar.h"
+#include "graphics/second_screen.h"
 #include "graphics/text.h"
 #include "graphics/weather.h"
 #include "graphics/window.h"
@@ -257,6 +258,7 @@ static config_widget ui_widgets_by_category[CATEGORY_UI_COUNT][MAX_WIDGETS] = {
         {TYPE_CHECKBOX, CONFIG_UI_DIGIT_SEPARATOR, TR_CONFIG_DIGIT_SEPARATOR, NULL, 0, 1, ITEM_BASE_H, CHECKBOX_MARGIN},
         {TYPE_CHECKBOX, CONFIG_UI_MESSAGE_ALERTS, TR_CONFIG_UI_MESSAGE_ALERTS, NULL, 0, 1, ITEM_BASE_H, CHECKBOX_MARGIN},
         {TYPE_CHECKBOX, CONFIG_UI_AUTO_DELETE_OLD_COMMON_MESSAGES, TR_CONFIG_UI_AUTO_DELETE_OLD_COMMON_MESSAGES, NULL, 0, 1, ITEM_BASE_H, CHECKBOX_MARGIN},
+        {TYPE_CHECKBOX, CONFIG_UI_USE_SECOND_SCREEN, TR_CONFIG_UI_USE_SECOND_SCREEN, NULL, 0, 1, ITEM_BASE_H, CHECKBOX_MARGIN},
         {TYPE_CHECKBOX, CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, TR_CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, NULL, 0, 1, ITEM_BASE_H, CHECKBOX_MARGIN},
         {TYPE_NONE}
     },
@@ -743,6 +745,13 @@ static void restart_cursors(void)
     }
 }
 
+static int config_change_second_screen(int key)
+{
+    config_change_basic(key);
+    second_screen_update_layout();
+    return 1;
+}
+
 static int config_change_cursors(int key)
 {
     config_change_basic(key);
@@ -1177,6 +1186,7 @@ static void set_custom_config_changes(void)
     data.config_values[CONFIG_SCREEN_DISPLAY_SCALE].change_action = config_change_display_scale;
     data.config_values[CONFIG_SCREEN_CURSOR_SCALE].change_action = config_change_cursors;
     data.config_values[CONFIG_SCREEN_COLOR_CURSORS].change_action = config_change_cursors;
+    data.config_values[CONFIG_UI_USE_SECOND_SCREEN].change_action = config_change_second_screen;
     data.config_values[CONFIG_GENERAL_UNLOCK_MOUSE].change_action = config_mouse_unlock_fullscreen;
     data.config_values[CONFIG_ORIGINAL_GAME_SPEED].change_action = config_change_game_speed;
     data.config_values[CONFIG_GP_CH_DEFAULT_GAME_SPEED].change_action = config_change_basic;

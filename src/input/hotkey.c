@@ -2,18 +2,18 @@
 
 #include "building/type.h"
 #include "city/constants.h"
-#include "city/warning.h"
 #include "core/config.h"
 #include "empire/editor.h"
 #include "game/settings.h"
 #include "game/state.h"
 #include "game/system.h"
 #include "graphics/screenshot.h"
+#include "graphics/second_screen.h"
 #include "graphics/video.h"
 #include "graphics/window.h"
 #include "input/scroll.h"
 #include "sound/music.h"
-#include "translation/translation.h"
+#include "window/city.h"
 #include "window/hotkey_editor.h"
 #include "window/popup_dialog.h"
 
@@ -41,7 +41,7 @@ typedef struct {
     int save_city_screenshot;
     int save_minimap_screenshot;
     int next_track;
-    int toggle_dialogs_screen;
+    int toggle_second_screen;
 } global_hotkeys;
 
 typedef struct {
@@ -533,8 +533,8 @@ static void set_definition_for_action(hotkey_action action, hotkey_definition *d
             def->action = &data.hotkey_state.cycle_overlay;
             def->value = -1;
             break;
-        case HOTKEY_TOGGLE_DIALOGS_SCREEN:
-            def->action = &data.global_hotkey_state.toggle_dialogs_screen;
+        case HOTKEY_TOGGLE_SECOND_SCREEN:
+            def->action = &data.global_hotkey_state.toggle_second_screen;
             break;
         default:
             def->action = 0;
@@ -749,15 +749,14 @@ void hotkey_handle_escape(void)
     window_popup_dialog_show(POPUP_DIALOG_QUIT, confirm_exit, 1);
 }
 
-static void toggle_dialogs_screen(void)
+static void toggle_second_screen(void)
 {
-    static int warning_id;
-    int is_on_second_screen = !config_get(CONFIG_UI_DIALOGS_ON_SECOND_SCREEN);
-    config_set(CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, is_on_second_screen);
+    if (window_is(WINDOW_TOP_MENU) || window_is(WINDOW_BUILD_MENU) || window_is(WINDOW_OVERLAY_MENU)) {
+        window_city_show();
+    }
+    config_set(CONFIG_UI_USE_SECOND_SCREEN, !config_get(CONFIG_UI_USE_SECOND_SCREEN));
     config_save();
-    warning_id = city_warning_show_custom(translation_for(is_on_second_screen ?
-        TR_DIALOGS_ON_SECOND_SCREEN : TR_DIALOGS_ON_MAIN_SCREEN), warning_id);
-    window_invalidate();
+    second_screen_update_layout();
 }
 
 void hotkey_handle_global_keys(void)
@@ -787,8 +786,8 @@ void hotkey_handle_global_keys(void)
     if (data.global_hotkey_state.next_track) {
         sound_music_next_track();
     }
-    if (data.global_hotkey_state.toggle_dialogs_screen) {
-        toggle_dialogs_screen();
+    if (data.global_hotkey_state.toggle_second_screen) {
+        toggle_second_screen();
     }
 }
 

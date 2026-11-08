@@ -2398,9 +2398,8 @@ static translation_string all_strings[] = {
     {TR_TERRAIN_BEACH, "Beach"},
     {TR_TERRAIN_BEACH_DESC, "A beach of fine sand. Pleasing to the eye and favoured by strollers, who dawdle along it, it yields sand and clay in plenty for the city."},
     {TR_CHEAT_FILL_MARKETS, "Filled all markets with food and goods"},
+    {TR_CONFIG_UI_USE_SECOND_SCREEN, "Use the second screen"},
     {TR_CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, "Show windows on the second screen"},
-    {TR_DIALOGS_ON_SECOND_SCREEN, "Windows on the second screen"},
-    {TR_DIALOGS_ON_MAIN_SCREEN, "Windows on the main screen"},
     {TR_BUTTON_PANEL_MENU, "Menu"}
 };
 

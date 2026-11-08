@@ -24,6 +24,7 @@ Smaller improvements:
 - The keyboard for naming a save opens on the bottom screen, over a dimmed
   panel.
 - Tap a panel button again to close the window it opened on the top screen.
+- Select switches to the original layout on the top screen alone, and back.
 
 <p align="center">
   <img src="doc/thor/top-screen.png" width="640" alt="The city on the Thor's top screen">
@@ -69,7 +70,7 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 | L2, R2 | Zoom out, zoom in; hold to zoom smoothly |
 | D-pad up, down | Game speed up, down |
 | D-pad left, right | Previous, next overlay |
-| Select | Move messages and building info to the top screen and back |
+| Select | Switch between both screens and the whole interface on the top screen |
 
 ## Touch
 
@@ -101,9 +102,14 @@ Bottom screen:
 
 ## Options
 
-Select moves messages, building info and popups between the screens. The
-choice is saved. The game's configuration has the same setting, Show windows
-on the second screen.
+Select switches between the two screens and the original layout, with the
+whole interface on the top screen. The bottom screen then stays black. The
+choice is saved, and the game's configuration has the same setting, Use the
+second screen.
+
+Show windows on the second screen, on by default, opens messages, building
+info and small popups on the bottom screen. Turn it off in the configuration
+to keep them on the top screen.
 
 The city, the empire map, the advisors, saving, loading and settings always
 stay on the top screen, where they have room.

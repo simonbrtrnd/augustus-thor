@@ -2397,9 +2397,8 @@ static translation_string all_strings[] = {
     {TR_EDITOR_TOOL_BEACH, "Plage"},
     {TR_TERRAIN_BEACH, "Plage"},
     {TR_TERRAIN_BEACH_DESC, "Une plage de sable fin. Agréable à contempler et prisée des flâneurs qui viennent s'y prélasser, elle fournit du sable et de l'argile en abondance à la cité."},
+    {TR_CONFIG_UI_USE_SECOND_SCREEN, "Utiliser l'écran du bas"},
     {TR_CONFIG_UI_DIALOGS_ON_SECOND_SCREEN, "Afficher les fenêtres sur l'écran du bas"},
-    {TR_DIALOGS_ON_SECOND_SCREEN, "Fenêtres sur l'écran du bas"},
-    {TR_DIALOGS_ON_MAIN_SCREEN, "Fenêtres sur l'écran du haut"},
     {TR_BUTTON_PANEL_MENU, "Menu"},
 };
 

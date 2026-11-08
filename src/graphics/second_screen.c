@@ -32,7 +32,7 @@ static struct {
 
 int second_screen_is_active(void)
 {
-    return data.screen_width > 0 && data.screen_height > 0;
+    return data.screen_width > 0 && data.screen_height > 0 && config_get(CONFIG_UI_USE_SECOND_SCREEN);
 }
 
 int second_screen_width(void)
@@ -67,6 +67,11 @@ void second_screen_set_size(int width, int height)
     }
     data.screen_width = width;
     data.screen_height = height;
+    second_screen_update_layout();
+}
+
+void second_screen_update_layout(void)
+{
     data.has_content = 0;
     city_view_set_viewport(screen_width(), screen_height());
     window_invalidate();

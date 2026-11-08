@@ -39,6 +39,11 @@ float second_screen_button_scale(void);
 void second_screen_set_size(int width, int height);
 
 /**
+ * Lays the main screen out again after the second screen was turned on or off in the settings.
+ */
+void second_screen_update_layout(void);
+
+/**
  * Runs the draw function on the second screen, at the scale of its current content.
  * Returns 0 without drawing when the second screen cannot be drawn on.
  */

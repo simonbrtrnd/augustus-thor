@@ -101,6 +101,11 @@ android {
                 storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias "augustus"
                 keyPassword System.getenv("ANDROID_KEYSTORE_KEY_PASSWORD")
+            } else if (project.findProperty("thor.keystore")) {
+                storeFile file(project.findProperty("thor.keystore"))
+                storePassword project.findProperty("thor.keystorePassword")
+                keyAlias project.findProperty("thor.keyAlias")
+                keyPassword project.findProperty("thor.keyPassword")
             }
         }
     }
@@ -123,7 +128,8 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig = signingConfigs.release
+            // Without a release key, a release build is signed with the local debug key so it still installs
+            signingConfig = signingConfigs.release.storeFile ? signingConfigs.release : signingConfigs.debug
             if (rootProject.ext.findAAR('augustus/libs', 'SDL3') && rootProject.ext.findAAR('augustus/libs', 'SDL3_mixer')) {
                 rootProject.ext.usingAAR = 3
                 externalNativeBuild.cmake.arguments += "-DSDL_VERSION=3"

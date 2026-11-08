@@ -24,6 +24,8 @@
 
 #include <stdlib.h>
 
+#define WELL_DESCRIPTION_Y 64
+
 static void button_go_to_orders(const generic_button *button);
 static void button_toggle_figure_state(const generic_button *button);
 static void button_roadblock_orders(const generic_button *button);
@@ -398,7 +400,8 @@ void window_building_draw_well(building_info_context *c)
         text_id = 3;
     }
     if (text_id) {
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 160, 109, text_id);
+        // The second screen draws this dialog taller than its 14 blocks, which would push the text below the risks
+        window_building_draw_description_at(c, WELL_DESCRIPTION_Y, 109, text_id);
     }
     inner_panel_draw(c->x_offset + 16, c->y_offset + 116, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 124);

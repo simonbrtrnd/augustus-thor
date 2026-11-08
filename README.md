@@ -107,6 +107,10 @@ whole interface on the top screen. The bottom screen then stays black. The
 choice is saved, and the game's configuration has the same setting, Use the
 second screen.
 
+<p align="center">
+  <img src="doc/thor/one-screen.png" width="640" alt="The whole interface on the Thor's top screen">
+</p>
+
 Show windows on the second screen, on by default, opens messages, building
 info and small popups on the bottom screen. Turn it off in the configuration
 to keep them on the top screen.

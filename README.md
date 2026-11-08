@@ -34,7 +34,7 @@ from your own copy.
 
 1. Download the APK from the
    [releases](https://github.com/simonbrtrnd/augustus-thor/releases) and open
-   it on the Thor. The app is called Caesar III. It installs next to the
+   it on the Thor. The app is called Caesar III Thor. It installs next to the
    official Augustus app.
 2. Copy your Caesar III folder to the Thor, for example to the SD card.
 3. Open the app and pick that folder. Your saves go in the same folder.

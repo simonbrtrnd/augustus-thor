@@ -11,8 +11,9 @@
 #include <math.h>
 
 #define ZOOM_STEP 2
+#define MIN_ZOOM 50
 
-static const int ZOOM_LEVELS[] = { 50, 75, 100, 150, 200, 250, 300, 400, 500 };
+static const int ZOOM_LEVELS[] = { MIN_ZOOM, 75, 100, 150, 200, 250, 300, 400, 500 };
 
 #define NUM_ZOOM_LEVELS (sizeof(ZOOM_LEVELS) / sizeof(ZOOM_LEVELS[0]))
 
@@ -20,7 +21,6 @@ static const int ZOOM_MAGNETS[] = { 100, 200 };
 
 #define NUM_ZOOM_MAGNETS (sizeof(ZOOM_MAGNETS) / sizeof(ZOOM_MAGNETS[0]))
 
-#define MIN_ZOOM 50
 #define HELD_ZOOM_DOUBLING_MILLIS 700
 #define HELD_ZOOM_RAMP_MILLIS 250
 #define HELD_ZOOM_START_SPEED 0.3f

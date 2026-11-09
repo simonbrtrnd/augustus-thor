@@ -527,6 +527,17 @@ static SDL_Texture *get_texture(int texture_id)
     return data.texture_lists[type][texture_id & IMAGE_ATLAS_BIT_MASK];
 }
 
+#ifdef USE_TEXTURE_SCALE_MODE
+static void set_texture_scale_mode(SDL_Texture *texture, SDL_ScaleMode scale_mode)
+{
+    // SDL 2's GLES2 renderer binds the texture to change its scale mode without updating its draw state.
+    // Draws queued before, and the next draw of the texture it still believes bound, would read this texture.
+    SDL_RenderFlush(data.renderer);
+    SDL_SetTextureScaleMode(texture, scale_mode);
+    SDL_GL_UnbindTexture(texture);
+}
+#endif
+
 static void set_texture_color_and_scale_mode(SDL_Texture *texture, color_t color, float scale)
 {
     if (!color) {
@@ -553,10 +564,7 @@ static void set_texture_color_and_scale_mode(SDL_Texture *texture, color_t color
         desired_scale_mode = SDL_ScaleModeNearest;
     }
     if (current_scale_mode != desired_scale_mode) {
-        // SDL 2's GLES2 renderer binds the texture to change its scale mode without flushing the queued draws,
-        // which then run against this texture
-        SDL_RenderFlush(data.renderer);
-        SDL_SetTextureScaleMode(texture, desired_scale_mode);
+        set_texture_scale_mode(texture, desired_scale_mode);
     }
 #endif
 }
@@ -845,7 +853,7 @@ static int save_to_texture(int texture_id, int x, int y, int width, int height)
         }
 #ifdef USE_TEXTURE_SCALE_MODE
         if (HAS_TEXTURE_SCALE_MODE) {
-            SDL_SetTextureScaleMode(texture, SDL_ScaleModeNearest);
+            set_texture_scale_mode(texture, SDL_ScaleModeNearest);
         }
 #endif
     } else {
@@ -1378,7 +1386,7 @@ int platform_renderer_create_render_texture(int width, int height)
                 scale_quality = SDL_ScaleModeNearest;
             }
 #endif
-            SDL_SetTextureScaleMode(data.render_texture, scale_quality);
+            set_texture_scale_mode(data.render_texture, scale_quality);
         } else {
 #endif
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");

@@ -123,7 +123,8 @@ static hotkey_action JOYSTICK_MAPPING_TO_HOTKEY_ACTION[MAX_HOTKEYS] = {
     HOTKEY_TOGGLE_OVERLAY,
     HOTKEY_SHOW_NEXT_OVERLAY,
     HOTKEY_SHOW_PREVIOUS_OVERLAY,
-    HOTKEY_TOGGLE_SECOND_SCREEN
+    HOTKEY_TOGGLE_SECOND_SCREEN,
+    HOTKEY_FOCUS_PANEL
 };
 
 static void update_hat(joystick_hat *hat, joystick_hat_position position)

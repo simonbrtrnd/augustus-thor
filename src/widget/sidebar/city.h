@@ -63,6 +63,13 @@ panel_list_action widget_sidebar_city_handle_panel_list(const mouse *m, generic_
     unsigned int count, unsigned int *focus_button_id);
 
 /**
+ * Lets the controller use the panel: the focus panel button shows a highlight, the d-pad moves it to the next
+ * button in that direction, the left click button presses it and the right click button hides it.
+ * Returns 1 when the input was used.
+ */
+int widget_sidebar_city_handle_panel_focus(const mouse *m, const hotkeys *h);
+
+/**
  * Lets the controller use a panel list: the d-pad moves the highlight, across columns with left and right,
  * and the left click button chooses the highlighted item. Returns 1 when the input was used.
  */

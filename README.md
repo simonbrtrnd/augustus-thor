@@ -55,6 +55,7 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 | L2, R2 | Zoom out, zoom in; hold to zoom smoothly |
 | D-pad up, down | Game speed, shown for 3 seconds; in a window, scroll it; in a list below, move the highlight |
 | D-pad left, right | Previous, next overlay; in a list below, change column |
+| Start | Highlight a button of the bottom panel: the d-pad moves it, B presses it, A or Start hides it |
 | Select | Switch between one and two screens |
 
 ## Touch

@@ -536,6 +536,9 @@ static void set_definition_for_action(hotkey_action action, hotkey_definition *d
         case HOTKEY_TOGGLE_SECOND_SCREEN:
             def->action = &data.global_hotkey_state.toggle_second_screen;
             break;
+        case HOTKEY_FOCUS_PANEL:
+            def->action = &data.hotkey_state.focus_panel;
+            break;
         default:
             def->action = 0;
     }

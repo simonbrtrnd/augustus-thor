@@ -46,6 +46,8 @@
 #include "window/mission_briefing.h"
 #include "window/overlay_menu.h"
 
+#include <stdlib.h>
+
 #define MINIMAP_Y_OFFSET 59
 #define PANEL_LIST_MARGIN 6
 #define PANEL_LIST_ROW_HEIGHT 24
@@ -205,9 +207,24 @@ static image_button panel_buttons_views[] = {
     {106, 235, 32, 31, IB_NORMAL, 0, 0, button_rotate, button_none, 1, 0, 1, PANEL_ASSETS, "rotate-right"},
 };
 
+#define MAX_PANEL_TARGETS 32
+
+typedef struct {
+    int x;
+    int y;
+    int width;
+    int height;
+    const image_button *image;
+    const generic_button *text;
+} panel_target;
+
 static struct {
     int focus_button_for_tooltip;
     int is_dragging_minimap;
+    struct {
+        int is_active;
+        const void *button;
+    } panel_focus;
     struct {
         int is_active;
         int x;
@@ -616,6 +633,61 @@ static void draw_panel_message_count(const image_button *button)
     text_draw(count, x, y, font, COLOR_WHITE);
 }
 
+static int add_image_targets(panel_target *targets, int count, const image_button *buttons, int num_buttons)
+{
+    for (int i = 0; i < num_buttons; i++) {
+        if (buttons[i].enabled) {
+            targets[count++] = (panel_target) { buttons[i].x_offset, buttons[i].y_offset, buttons[i].width,
+                buttons[i].height, &buttons[i], 0 };
+        }
+    }
+    return count;
+}
+
+static int get_panel_targets(panel_target *targets)
+{
+    int count = add_image_targets(targets, 0, panel_button_pause, 1);
+    for (int i = 0; i < PANEL_TEXT_BUTTONS; i++) {
+        const generic_button *button = &panel_text_buttons[i];
+        targets[count++] = (panel_target) { button->x, button->y, button->width, button->height, 0, button };
+    }
+    count = add_image_targets(targets, count, panel_buttons_advisors_empire, 2);
+    count = add_image_targets(targets, count, panel_buttons_build, 12);
+    count = add_image_targets(targets, count, panel_buttons_views, 4);
+    return add_image_targets(targets, count, panel_buttons_tools, 3);
+}
+
+static const void *get_target_button(const panel_target *target)
+{
+    return target->image ? (const void *) target->image : (const void *) target->text;
+}
+
+static int get_focused_target(const panel_target *targets, int count)
+{
+    for (int i = 0; i < count; i++) {
+        if (get_target_button(&targets[i]) == data.panel_focus.button) {
+            return i;
+        }
+    }
+    for (int i = 0; i < count; i++) {
+        if (targets[i].image == &panel_buttons_build[0]) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+static void draw_panel_focus(void)
+{
+    if (!data.panel_focus.is_active) {
+        return;
+    }
+    panel_target targets[MAX_PANEL_TARGETS];
+    int count = get_panel_targets(targets);
+    const panel_target *target = &targets[get_focused_target(targets, count)];
+    graphics_light_up_rect(target->x, target->y, target->width, target->height, 3);
+}
+
 void widget_sidebar_city_draw_panel(void)
 {
     second_screen_draw_marble_background();
@@ -635,6 +707,7 @@ void widget_sidebar_city_draw_panel(void)
     if (panel_buttons_tools[1].enabled) {
         draw_panel_message_count(&panel_buttons_tools[1]);
     }
+    draw_panel_focus();
 }
 
 void widget_sidebar_city_draw_panel_background(void)
@@ -707,6 +780,9 @@ static int handle_panel_minimap(const mouse *m)
 
 int widget_sidebar_city_handle_panel_mouse(const mouse *m)
 {
+    if (m->left.went_down) {
+        data.panel_focus.is_active = 0;
+    }
     if (handle_panel_minimap(m)) {
         return 1;
     }
@@ -716,6 +792,74 @@ int widget_sidebar_city_handle_panel_mouse(const mouse *m)
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_advisors_empire, 2, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_build, 12, 0) ||
         image_buttons_handle_mouse(m, 0, 0, panel_buttons_tools, 3, 0);
+}
+
+static int get_target_in_direction(const panel_target *targets, int count, int from, int dx, int dy)
+{
+    int from_x = targets[from].x + targets[from].width / 2;
+    int from_y = targets[from].y + targets[from].height / 2;
+    int best = from;
+    int best_distance = 0;
+    for (int i = 0; i < count; i++) {
+        int x = targets[i].x + targets[i].width / 2 - from_x;
+        int y = targets[i].y + targets[i].height / 2 - from_y;
+        int along = x * dx + y * dy;
+        if (along <= 0) {
+            continue;
+        }
+        int distance = along + 2 * abs(x * dy - y * dx);
+        if (best == from || distance < best_distance) {
+            best = i;
+            best_distance = distance;
+        }
+    }
+    return best;
+}
+
+static void activate_panel_target(const panel_target *target)
+{
+    if (target->image) {
+        target->image->left_click_handler(target->image->parameter1, target->image->parameter2);
+    } else {
+        target->text->left_click_handler(target->text);
+    }
+}
+
+int widget_sidebar_city_handle_panel_focus(const mouse *m, const hotkeys *h)
+{
+    if (!second_screen_is_active()) {
+        data.panel_focus.is_active = 0;
+        return 0;
+    }
+    if (h->focus_panel) {
+        data.panel_focus.is_active = !data.panel_focus.is_active;
+        return 1;
+    }
+    if (!data.panel_focus.is_active) {
+        return 0;
+    }
+    if (m->is_touch && m->left.went_down) {
+        data.panel_focus.is_active = 0;
+        return 0;
+    }
+    panel_target targets[MAX_PANEL_TARGETS];
+    int count = get_panel_targets(targets);
+    int focus = get_focused_target(targets, count);
+    int dx = h->cycle_overlay;
+    int dy = h->decrease_game_speed - h->increase_game_speed;
+    if (dx || dy) {
+        data.panel_focus.button = get_target_button(&targets[get_target_in_direction(targets, count, focus, dx, dy)]);
+        return 1;
+    }
+    if (m->right.went_up) {
+        data.panel_focus.is_active = 0;
+        return 1;
+    }
+    if (m->left.went_up) {
+        activate_panel_target(&targets[focus]);
+        return 1;
+    }
+    return m->left.went_down || m->left.is_down || m->right.went_down || m->right.is_down;
 }
 
 static int is_on_panel_button(const mouse *m, const image_button *button)

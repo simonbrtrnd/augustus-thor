@@ -957,6 +957,9 @@ static void handle_hotkeys(const hotkeys *h)
 static void handle_input(const mouse *m, const hotkeys *h)
 {
     hide_outdated_game_speed();
+    if (widget_sidebar_city_handle_panel_focus(m, h)) {
+        return;
+    }
     handle_hotkeys(h);
     if (!building_construction_in_progress()) {
         if (widget_top_menu_handle_input(m, h)) {

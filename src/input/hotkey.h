@@ -27,6 +27,7 @@ typedef struct {
     int toggle_overlay;
     int cycle_overlay;
     int toggle_pause;
+    int focus_panel;
     int toggle_editor_battle_info;
     int set_bookmark;
     int go_to_bookmark;

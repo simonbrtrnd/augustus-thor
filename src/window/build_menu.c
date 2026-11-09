@@ -426,6 +426,10 @@ static int handle_input_build_menu_index(const hotkeys *h)
 static void handle_input(const mouse *m, const hotkeys *h)
 {
     if (second_screen_is_active()) {
+        if (widget_sidebar_city_handle_panel_list_controller(m, h, panel_buttons, data.num_items,
+            &data.focus_button_id)) {
+            return;
+        }
         if (!handle_input_build_menu_index(h) && (input_go_back_requested(m, h) || m->left.went_up)) {
             window_build_menu_hide();
         }

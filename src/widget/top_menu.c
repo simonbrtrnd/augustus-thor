@@ -1130,6 +1130,10 @@ static void draw_panel_list_foreground(void)
 
 static void handle_panel_list_input(const mouse *m, const hotkeys *h)
 {
+    if (widget_sidebar_city_handle_panel_list_controller(m, h, panel.buttons, panel.list->num_items,
+        &panel.focus_button_id)) {
+        return;
+    }
     if (m->left.went_up || input_go_back_requested(m, h)) {
         window_city_show();
     }

@@ -3,6 +3,7 @@
 
 #include "graphics/generic_button.h"
 #include "graphics/tooltip.h"
+#include "input/hotkey.h"
 #include "input/mouse.h"
 
 #include <stdint.h>
@@ -59,6 +60,13 @@ void widget_sidebar_city_draw_panel_list_item(int index, int count, const panel_
  * PANEL_LIST_OUTSIDE when a tap lands outside the list, and PANEL_LIST_NO_ACTION otherwise.
  */
 panel_list_action widget_sidebar_city_handle_panel_list(const mouse *m, generic_button *buttons,
+    unsigned int count, unsigned int *focus_button_id);
+
+/**
+ * Lets the controller use a panel list: the d-pad moves the highlight, across columns with left and right,
+ * and the left click button chooses the highlighted item. Returns 1 when the input was used.
+ */
+int widget_sidebar_city_handle_panel_list_controller(const mouse *m, const hotkeys *h, generic_button *buttons,
     unsigned int count, unsigned int *focus_button_id);
 
 #endif // WIDGET_SIDEBAR_CITY_H

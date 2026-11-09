@@ -780,11 +780,22 @@ void widget_sidebar_city_draw_panel_list_frame(void)
     draw_panel_text_button(&back_row, lang_get_string(12, 0));
 }
 
-static void place_panel_list_item(int index, int count, generic_button *button)
+static int get_panel_list_columns(int count)
 {
     int max_rows = (get_panel_list_height() + PANEL_LIST_ROW_GAP) / (PANEL_LIST_ROW_HEIGHT + PANEL_LIST_ROW_GAP);
-    int columns = count > max_rows ? (count + max_rows - 1) / max_rows : 1;
-    int rows = (count + columns - 1) / columns;
+    return count > max_rows ? (count + max_rows - 1) / max_rows : 1;
+}
+
+static int get_panel_list_rows(int count)
+{
+    int columns = get_panel_list_columns(count);
+    return (count + columns - 1) / columns;
+}
+
+static void place_panel_list_item(int index, int count, generic_button *button)
+{
+    int columns = get_panel_list_columns(count);
+    int rows = get_panel_list_rows(count);
     button->width = (get_panel_list_width() - (columns - 1) * PANEL_LIST_COLUMN_GAP) / columns;
     button->height = PANEL_LIST_ROW_HEIGHT;
     button->x = PANEL_LIST_MARGIN + (index / rows) * (button->width + PANEL_LIST_COLUMN_GAP);
@@ -811,6 +822,42 @@ panel_list_action widget_sidebar_city_handle_panel_list(const mouse *m, generic_
     int is_in_list = is_in_rect(m, PANEL_LIST_MARGIN, PANEL_LIST_TOP, get_panel_list_width(),
         get_panel_list_height());
     return m->left.went_up && !is_in_list ? PANEL_LIST_OUTSIDE : PANEL_LIST_NO_ACTION;
+}
+
+static void move_panel_list_focus(int step, unsigned int count, unsigned int *focus_button_id)
+{
+    if (!*focus_button_id) {
+        *focus_button_id = step > 0 ? 1 : count;
+        return;
+    }
+    int focus = (int) *focus_button_id + step;
+    if (focus >= 1 && focus <= (int) count) {
+        *focus_button_id = focus;
+    }
+}
+
+int widget_sidebar_city_handle_panel_list_controller(const mouse *m, const hotkeys *h, generic_button *buttons,
+    unsigned int count, unsigned int *focus_button_id)
+{
+    int dpad_step = 0;
+    if (h->increase_game_speed) {
+        dpad_step = -1;
+    } else if (h->decrease_game_speed) {
+        dpad_step = 1;
+    } else if (h->cycle_overlay) {
+        dpad_step = h->cycle_overlay * get_panel_list_rows(count);
+    }
+    if (dpad_step) {
+        move_panel_list_focus(dpad_step, count, focus_button_id);
+        window_request_refresh();
+        return 1;
+    }
+    if (*focus_button_id && m->left.went_up && !m->is_touch) {
+        generic_button *button = &buttons[*focus_button_id - 1];
+        button->left_click_handler(button);
+        return 1;
+    }
+    return 0;
 }
 
 int widget_sidebar_city_handle_mouse_build_menu(const mouse *m)

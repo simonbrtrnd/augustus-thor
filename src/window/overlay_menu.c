@@ -557,6 +557,10 @@ static void close_menu(void)
 static void handle_input(const mouse *m, const hotkeys *h)
 {
     if (second_screen_is_active()) {
+        if (widget_sidebar_city_handle_panel_list_controller(m, h, panel.buttons,
+            count_entries(panel.levels[panel.depth]), &panel.focus_button_id)) {
+            return;
+        }
         if (m->left.went_up || input_go_back_requested(m, h)) {
             close_menu();
         }

@@ -1095,7 +1095,7 @@ static void panel_open_submenu(int index)
 
 static int is_panel_submenu(const menu_bar_item *list)
 {
-    return list != &panel_menu && list != &menu[INDEX_ADVISORS];
+    return list != &panel_menu;
 }
 
 static void button_panel_item(const generic_button *button)
@@ -1168,7 +1168,3 @@ void widget_top_menu_show_panel_menu(void)
     show_panel_list(&panel_menu);
 }
 
-void widget_top_menu_show_panel_reports(void)
-{
-    show_panel_list(&menu[INDEX_ADVISORS]);
-}

@@ -19,6 +19,5 @@ void widget_top_menu_show_panel_menu(void);
 /**
  * Opens the list of advisor reports on the panel of the second screen.
  */
-void widget_top_menu_show_panel_reports(void);
 
 #endif // WINDOW_TOP_MENU_H

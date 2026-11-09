@@ -95,7 +95,7 @@ static void button_toggle_pause(int param1, int param2);
 static void button_panel_overlay(const generic_button *button);
 static void button_panel_menu(const generic_button *button);
 static void button_panel_advisor(const generic_button *button);
-static void button_panel_reports(int param1, int param2);
+static void button_panel_advisors(int param1, int param2);
 
 static image_button buttons_overlays_collapse_sidebar[] = {
     {127, 5, 31, 20, IB_NORMAL, 90, 0, button_collapse_expand, button_none, 0, 0, 1},
@@ -173,7 +173,7 @@ static image_button panel_button_pause[] = {
 };
 
 static image_button panel_buttons_advisors_empire[] = {
-    {140, 70, 82, 31, IB_NORMAL, 0, 0, button_panel_reports, button_none, 0, 0, 1, PANEL_ASSETS, "advisors"},
+    {140, 70, 82, 31, IB_NORMAL, 0, 0, button_panel_advisors, button_none, 0, 0, 1, PANEL_ASSETS, "advisors"},
     {224, 70, 82, 31, IB_NORMAL, 0, 0, button_empire, button_none, 0, 0, 1, PANEL_ASSETS, "empire"},
 };
 
@@ -731,6 +731,9 @@ static int is_on_button_of_shown_window(const mouse *m)
     if (!window_is(WINDOW_ADVISORS)) {
         return 0;
     }
+    if (is_on_panel_button(m, &panel_buttons_advisors_empire[0])) {
+        return 1;
+    }
     for (int i = 0; i < PANEL_TEXT_BUTTONS; i++) {
         const generic_button *button = &panel_text_buttons[i];
         if (button->left_click_handler == button_panel_advisor &&
@@ -929,10 +932,10 @@ static void button_panel_menu(const generic_button *button)
     widget_top_menu_show_panel_menu();
 }
 
-static void button_panel_reports(int param1, int param2)
+static void button_panel_advisors(int param1, int param2)
 {
     window_build_menu_hide();
-    widget_top_menu_show_panel_reports();
+    window_advisors_show_checked();
 }
 
 static void button_panel_advisor(const generic_button *button)

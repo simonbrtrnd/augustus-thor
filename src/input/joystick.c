@@ -29,6 +29,9 @@
 // Note: this ratio is untested and may be under or oversensitive
 #define TRACKBALL_TO_AXIS_RATIO 5
 
+#define CURSOR_BOOST_TILT 0.9
+#define CURSOR_BOOST_START_SPEED 0.5
+
 typedef int joystick_axis;
 typedef int joystick_button;
 
@@ -498,6 +501,25 @@ static int translate_mapping_reset(void)
     return get_joystick_input_for_action(MAPPING_ACTION_RESET_MAPPING, 0);
 }
 
+static double get_cursor_speed_ratio(double tilt)
+{
+    if (tilt < CURSOR_BOOST_TILT) {
+        double precise_tilt = tilt / CURSOR_BOOST_TILT;
+        return CURSOR_BOOST_START_SPEED * precise_tilt * precise_tilt;
+    }
+    return CURSOR_BOOST_START_SPEED +
+        (1.0 - CURSOR_BOOST_START_SPEED) * (tilt - CURSOR_BOOST_TILT) / (1.0 - CURSOR_BOOST_TILT);
+}
+
+static double get_cursor_curve_factor(int delta_x, int delta_y)
+{
+    double tilt = sqrt((double) delta_x * delta_x + (double) delta_y * delta_y) / AXIS_MAX_VALUE;
+    if (tilt > 1.0) {
+        tilt = 1.0;
+    }
+    return tilt > 0.0 ? get_cursor_speed_ratio(tilt) / tilt : 0.0;
+}
+
 static int translate_mouse_cursor_position(void)
 {
     mapped_input cursor_input[NUM_DIRECTIONS] = {0};
@@ -533,8 +555,10 @@ static int translate_mouse_cursor_position(void)
     int delta_x = cursor_input[DIRECTION_RIGHT].value - cursor_input[DIRECTION_LEFT].value;
     int delta_y = cursor_input[DIRECTION_DOWN].value - cursor_input[DIRECTION_UP].value;
 
-    speed_set_target(&data.mouse.x_speed, delta_x / slowdown, SPEED_CHANGE_IMMEDIATE, 1);
-    speed_set_target(&data.mouse.y_speed, delta_y / slowdown, SPEED_CHANGE_IMMEDIATE, 1);
+    double curve_factor = get_cursor_curve_factor(delta_x, delta_y);
+
+    speed_set_target(&data.mouse.x_speed, delta_x * curve_factor / slowdown, SPEED_CHANGE_IMMEDIATE, 1);
+    speed_set_target(&data.mouse.y_speed, delta_y * curve_factor / slowdown, SPEED_CHANGE_IMMEDIATE, 1);
 
     delta_x = speed_get_delta(&data.mouse.x_speed);
     delta_y = speed_get_delta(&data.mouse.y_speed);

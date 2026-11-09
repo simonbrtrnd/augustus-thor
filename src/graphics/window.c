@@ -127,6 +127,15 @@ static mouse get_go_back_mouse(void)
     return (mouse) { .x = -1, .y = -1, .right = m->right, .is_touch = m->is_touch };
 }
 
+static void pass_scroll_to_second_screen_dialog(void)
+{
+    const mouse *m = mouse_get();
+    if (m->scrolled != SCROLL_NONE) {
+        mouse scroll = { .x = -1, .y = -1, .scrolled = m->scrolled };
+        second_screen_handle_input(&scroll);
+    }
+}
+
 static void update_input_after(void)
 {
     reset_touches(0);
@@ -152,6 +161,7 @@ void window_draw(int force)
     if (second_screen_has_dialog()) {
         mouse go_back = get_go_back_mouse();
         w->handle_input(&go_back, h);
+        pass_scroll_to_second_screen_dialog();
     } else {
         const mouse *m = mouse_get();
         w->handle_input(m, h);

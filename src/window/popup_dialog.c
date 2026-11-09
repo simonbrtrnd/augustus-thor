@@ -44,7 +44,6 @@ static struct {
     const uint8_t *custom_title;
     const uint8_t *custom_text;
     const uint8_t *checkbox_text;
-    int is_over_file_dialog;
 } data;
 
 static int init(const uint8_t *custom_title, const uint8_t *custom_text,
@@ -61,7 +60,6 @@ static int init(const uint8_t *custom_title, const uint8_t *custom_text,
     data.custom_text = custom_text;
     data.checkbox_text = checkbox_text;
     data.checked = 0;
-    data.is_over_file_dialog = window_is(WINDOW_FILE_DIALOG);
     if (!data.custom_text) {
         data.custom_text = lang_get_string(PROCEED_GROUP, PROCEED_TEXT);
     }
@@ -92,19 +90,10 @@ static void draw_dialog_background(void)
     graphics_reset_dialog();
 }
 
-static void draw_on_dialog_screen(void (*draw)(void))
-{
-    if (data.is_over_file_dialog) {
-        draw();
-    } else {
-        second_screen_draw_dialog(draw);
-    }
-}
-
 static void draw_background(void)
 {
     window_draw_underlying_window();
-    draw_on_dialog_screen(draw_dialog_background);
+    second_screen_draw_dialog(draw_dialog_background);
 }
 
 static void draw_dialog_foreground(void)
@@ -123,7 +112,7 @@ static void draw_dialog_foreground(void)
 
 static void draw_foreground(void)
 {
-    draw_on_dialog_screen(draw_dialog_foreground);
+    second_screen_draw_dialog(draw_dialog_foreground);
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)

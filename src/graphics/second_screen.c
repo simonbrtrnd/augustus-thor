@@ -156,6 +156,21 @@ static float get_full_dialog_scale(void)
         (float) data.screen_height / (FULL_DIALOG_HEIGHT + 2 * DIALOG_MARGIN));
 }
 
+static int is_opened_from_bottom_screen(void)
+{
+    switch (window_get_id_behind()) {
+        case WINDOW_CITY:
+        case WINDOW_CITY_MILITARY:
+        case WINDOW_TOP_MENU:
+        case WINDOW_BUILD_MENU:
+        case WINDOW_OVERLAY_MENU:
+        case WINDOW_MILITARY_MENU:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
 {
     float pixel_scale = FULL_SCREEN_DIALOG_PIXEL_SCALE;
@@ -166,7 +181,8 @@ void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
         // A window opened over this dialog is drawn at its scale, so the dialog shrinks until a full dialog fits
         pixel_scale = fminf(pixel_scale, get_full_dialog_scale());
     }
-    if (!draw_dialog_background(pixel_scale, 0, draw)) {
+    int opens_below = second_screen_has_dialog() || is_opened_from_bottom_screen();
+    if (!opens_below || !draw_dialog_background(pixel_scale, 0, draw)) {
         draw();
     }
 }
@@ -179,7 +195,7 @@ int second_screen_has_dialog(void)
 void second_screen_draw_dialog(void (*draw)(void))
 {
     int is_drawn = second_screen_has_dialog() ? second_screen_draw(draw) :
-        draw_dialog_background(get_full_dialog_scale(), 1, draw);
+        is_opened_from_bottom_screen() && draw_dialog_background(get_full_dialog_scale(), 1, draw);
     if (!is_drawn) {
         draw();
     }

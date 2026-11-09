@@ -150,6 +150,8 @@ void window_show(const window_type *window);
 
 window_id window_get_id(void);
 
+window_id window_get_id_behind(void);
+
 void window_go_back(void);
 
 #endif // GRAPHICS_WINDOW_H

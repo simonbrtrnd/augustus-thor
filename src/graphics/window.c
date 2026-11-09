@@ -80,6 +80,12 @@ window_id window_get_id(void)
     return data.current_window->id;
 }
 
+window_id window_get_id_behind(void)
+{
+    int index = data.queue_index > 0 ? data.queue_index - 1 : MAX_QUEUE - 1;
+    return data.window_queue[index].id;
+}
+
 void window_show(const window_type *window)
 {
     reset_input();

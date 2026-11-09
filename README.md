@@ -46,7 +46,7 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 | Button | Action |
 | --- | --- |
 | Left stick | Move the cursor; slow for precision, fast when pushed all the way |
-| Right stick | Move the map, or scroll a window |
+| Right stick | Move the map, or scroll a window; in a list below, move the highlight |
 | B | Left click; in a list below, choose the highlighted item |
 | A | Right click; shows the info of what is under the cursor |
 | Y | Pause |

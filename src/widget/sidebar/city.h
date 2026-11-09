@@ -70,8 +70,9 @@ panel_list_action widget_sidebar_city_handle_panel_list(const mouse *m, generic_
 int widget_sidebar_city_handle_panel_focus(const mouse *m, const hotkeys *h);
 
 /**
- * Lets the controller use a panel list: the d-pad moves the highlight, across columns with left and right,
- * and the left click button chooses the highlighted item. Returns 1 when the input was used.
+ * Lets the controller use a panel list: scrolling, from the d-pad or the right stick, moves the highlight,
+ * d-pad left and right move it across columns, and the left click button chooses the highlighted item.
+ * Returns 1 when the input was used.
  */
 int widget_sidebar_city_handle_panel_list_controller(const mouse *m, const hotkeys *h, generic_button *buttons,
     unsigned int count, unsigned int *focus_button_id);

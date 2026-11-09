@@ -15,6 +15,7 @@
 #include "city/warning.h"
 #include "core/config.h"
 #include "core/string.h"
+#include "core/time.h"
 #include "figure/formation.h"
 #include "figure/formation_legion.h"
 #include "figure/roamer_preview.h"
@@ -42,6 +43,7 @@
 #include "scenario/allowed_building.h"
 #include "scenario/criteria.h"
 #include "scenario/custom_variable.h"
+#include "translation/translation.h"
 #include "widget/city/city.h"
 #include "widget/top_menu.h"
 #include "widget/sidebar/city.h"
@@ -56,6 +58,12 @@
 
 #define TOPLEFT_MESSAGES_X 5
 #define TOPLEFT_MESSAGES_Y_SPACING 24
+#define GAME_SPEED_WARNING_MILLIS 3000
+
+static struct {
+    int id;
+    time_millis shown_at;
+} game_speed_warning;
 
 static int mothball_warning_id;
 static int time_left_label_shown;
@@ -756,6 +764,26 @@ static void set_construction_building_type(building_type type, int rotation)
     }
 }
 
+static void show_game_speed(void)
+{
+    uint8_t text[64];
+    uint8_t *end = string_copy(translation_for(TR_CONFIG_GAME_SPEED), text, sizeof(text) - 8);
+    *end++ = ' ';
+    end += string_from_int(end, setting_game_speed(), 0);
+    string_copy(string_from_ascii("%"), end, 2);
+    game_speed_warning.id = city_warning_show_custom(text, game_speed_warning.id);
+    game_speed_warning.shown_at = time_get_millis();
+}
+
+static void hide_outdated_game_speed(void)
+{
+    if (game_speed_warning.id &&
+        time_get_millis() - game_speed_warning.shown_at > GAME_SPEED_WARNING_MILLIS) {
+        city_warning_clear_id(game_speed_warning.id);
+        game_speed_warning.id = 0;
+    }
+}
+
 static void handle_hotkeys(const hotkeys *h)
 {
     if (h->toggle_pause) {
@@ -763,9 +791,11 @@ static void handle_hotkeys(const hotkeys *h)
     }
     if (h->decrease_game_speed) {
         setting_decrease_game_speed();
+        show_game_speed();
     }
     if (h->increase_game_speed) {
         setting_increase_game_speed();
+        show_game_speed();
     }
     if (h->show_overlay) {
         show_overlay(h->show_overlay);
@@ -926,6 +956,7 @@ static void handle_hotkeys(const hotkeys *h)
 
 static void handle_input(const mouse *m, const hotkeys *h)
 {
+    hide_outdated_game_speed();
     handle_hotkeys(h);
     if (!building_construction_in_progress()) {
         if (widget_top_menu_handle_input(m, h)) {

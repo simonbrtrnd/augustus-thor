@@ -30,6 +30,7 @@
 #define TRACKBALL_TO_AXIS_RATIO 5
 
 #define CURSOR_BOOST_TILT 0.9
+#define DPAD_WINDOW_SCROLL_VALUE (AXIS_MAX_VALUE / 3)
 #define CURSOR_BOOST_START_SPEED 0.5
 
 typedef int joystick_axis;
@@ -617,14 +618,22 @@ static int translate_window_scrolling(void)
 
     handled |= get_joystick_input_for_action(MAPPING_ACTION_SCROLL_WINDOW_UP, &scroll_up);
     handled |= get_joystick_input_for_action(MAPPING_ACTION_SCROLL_WINDOW_DOWN, &scroll_down);
+    int dpad_up = get_joystick_input_for_action(MAPPING_ACTION_INCREASE_GAME_SPEED, 0);
+    int dpad_down = get_joystick_input_for_action(MAPPING_ACTION_DECREASE_GAME_SPEED, 0);
 
-    if (!handled) {
+    if (!handled && !dpad_up && !dpad_down) {
         return 0;
     }
 
     // All mouse scrolling input will internally be treated as a joystick axis
     translate_input_for_element(&scroll_up, JOYSTICK_ELEMENT_AXIS);
     translate_input_for_element(&scroll_down, JOYSTICK_ELEMENT_AXIS);
+    if (!scroll_up.value && dpad_up) {
+        scroll_up.value = DPAD_WINDOW_SCROLL_VALUE;
+    }
+    if (!scroll_down.value && dpad_down) {
+        scroll_down.value = DPAD_WINDOW_SCROLL_VALUE;
+    }
 
     unsigned int max_scroll_time = 50;
 

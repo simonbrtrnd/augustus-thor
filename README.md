@@ -51,7 +51,7 @@ Buttons are named as printed on the Thor: B bottom, A right, Y left, X top.
 | A | Right click; shows the info of what is under the cursor |
 | Y | Pause |
 | X | Hide or show the overlay |
-| L1, R1 | Rotate the map |
+| L1, R1 | Rotate the map; in the advisors, show the previous or next one |
 | L2, R2 | Zoom out, zoom in; hold to zoom smoothly |
 | D-pad up, down | Game speed |
 | D-pad left, right | Previous, next overlay |

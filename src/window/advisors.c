@@ -224,6 +224,18 @@ static void draw_foreground(void)
     second_screen_draw(widget_sidebar_city_draw_panel);
 }
 
+static void show_adjacent_advisor(int direction)
+{
+    int count = ADVISOR_MAX - 1;
+    int index = 0;
+    while (index < count - 1 && advisor_buttons[index].parameter1 != (int) current_advisor) {
+        index++;
+    }
+    index = (index + direction + count) % count;
+    window_advisors_set_advisor(advisor_buttons[index].parameter1);
+    window_invalidate();
+}
+
 static void handle_hotkeys(const hotkeys *h)
 {
     if (h->show_advisor) {
@@ -232,6 +244,10 @@ static void handle_hotkeys(const hotkeys *h)
         } else {
             window_advisors_show_advisor(h->show_advisor);
         }
+    } else if (h->rotate_map_left) {
+        show_adjacent_advisor(-1);
+    } else if (h->rotate_map_right) {
+        show_adjacent_advisor(1);
     }
 }
 

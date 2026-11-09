@@ -2363,6 +2363,18 @@ static int initialise_map_widget(void)
     return 1;
 }
 
+static void draw_city_badge_without_bust(const empire_city *city)
+{
+    int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
+    int badge_width = image_get(badge_id)->width;
+    int x = (data.panel.x_min + data.panel.x_max - badge_width) / 2;
+    int y = data.y_max - 122;
+    image_draw(badge_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+    if (city) {
+        text_draw_centered_ellipsized(empire_city_get_name(city), x + 8, y + 4, badge_width - 16, FONT_LARGE_BLACK, 0);
+    }
+}
+
 static void draw_city_name(const empire_city *city)
 {
     int image_base = image_group(GROUP_EMPIRE_PANELS);
@@ -2370,9 +2382,11 @@ static void draw_city_name(const empire_city *city)
     int base_x_min = draw_ornaments_outside ? data.panel.x_min : data.x_min;
     int base_x_max = draw_ornaments_outside ? data.panel.x_max : data.x_max;
     image_draw(image_base + 6, base_x_min + 2, data.y_max - 199, COLOR_MASK_NONE, SCALE_NONE);//left bird
-    if (data.sidebar.border_btn.is_collapsed) {
-        image_draw(image_base + 7, base_x_max - 84, data.y_max - 199, COLOR_MASK_NONE, SCALE_NONE);//right bird
+    if (!data.sidebar.border_btn.is_collapsed) {
+        draw_city_badge_without_bust(city);
+        return;
     }
+    image_draw(image_base + 7, base_x_max - 84, data.y_max - 199, COLOR_MASK_NONE, SCALE_NONE);//right bird
     image_draw(image_base + 8, (data.x_min + data.x_max - 332) / 2, data.y_max - 181, COLOR_MASK_NONE, SCALE_NONE); //city badge big
     if (city) {
         int x_offset = (data.panel.x_min + data.panel.x_max - 332) / 2 + 64;

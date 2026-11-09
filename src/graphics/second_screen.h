@@ -73,8 +73,8 @@ void second_screen_draw_dialog(void (*draw)(void));
 void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void));
 
 /**
- * Whether the second screen shows the dialog of the current window, or the dialog it was opened over.
- * Input on the main screen then can only close the window.
+ * Whether the second screen shows the dialog of the current window. Input on the main screen then can only
+ * close the window.
  */
 int second_screen_has_dialog(void);
 

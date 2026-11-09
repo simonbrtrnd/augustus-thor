@@ -80,6 +80,11 @@ window_id window_get_id(void)
     return data.current_window->id;
 }
 
+window_id window_get_drawing_id(void)
+{
+    return data.window_queue[data.queue_index].id;
+}
+
 window_id window_get_id_behind(void)
 {
     int index = data.queue_index > 0 ? data.queue_index - 1 : MAX_QUEUE - 1;

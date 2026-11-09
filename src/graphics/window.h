@@ -152,6 +152,8 @@ window_id window_get_id(void);
 
 window_id window_get_id_behind(void);
 
+window_id window_get_drawing_id(void);
+
 void window_go_back(void);
 
 #endif // GRAPHICS_WINDOW_H

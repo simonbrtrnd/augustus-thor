@@ -25,6 +25,7 @@ static struct {
     float pixel_scale;
     int has_content;
     int has_dialog;
+    window_id dialog_window;
     window_id content_window;
     int is_drawing;
     int is_handling_input;
@@ -147,6 +148,7 @@ static int draw_dialog_background(float pixel_scale, int is_darkened, void (*dra
     draw();
     end_drawing();
     data.has_dialog = 1;
+    data.dialog_window = window_get_drawing_id();
     return 1;
 }
 
@@ -154,6 +156,11 @@ static float get_full_dialog_scale(void)
 {
     return fminf((float) data.screen_width / (FULL_DIALOG_WIDTH + 2 * DIALOG_MARGIN),
         (float) data.screen_height / (FULL_DIALOG_HEIGHT + 2 * DIALOG_MARGIN));
+}
+
+static int has_dialog_below(void)
+{
+    return data.has_content && data.has_dialog && data.content_window == window_get_id();
 }
 
 static int is_opened_from_bottom_screen(void)
@@ -181,7 +188,7 @@ void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
         // A window opened over this dialog is drawn at its scale, so the dialog shrinks until a full dialog fits
         pixel_scale = fminf(pixel_scale, get_full_dialog_scale());
     }
-    int opens_below = second_screen_has_dialog() || is_opened_from_bottom_screen();
+    int opens_below = has_dialog_below() || is_opened_from_bottom_screen();
     if (!opens_below || !draw_dialog_background(pixel_scale, 0, draw)) {
         draw();
     }
@@ -189,13 +196,18 @@ void second_screen_draw_full_screen_dialog(int min_height, void (*draw)(void))
 
 int second_screen_has_dialog(void)
 {
-    return data.has_content && data.has_dialog && data.content_window == window_get_id();
+    return has_dialog_below() && data.dialog_window == window_get_id();
 }
 
 void second_screen_draw_dialog(void (*draw)(void))
 {
-    int is_drawn = second_screen_has_dialog() ? second_screen_draw(draw) :
-        is_opened_from_bottom_screen() && draw_dialog_background(get_full_dialog_scale(), 1, draw);
+    int is_drawn = 0;
+    if (has_dialog_below()) {
+        is_drawn = second_screen_draw(draw);
+        data.dialog_window = window_get_drawing_id();
+    } else if (is_opened_from_bottom_screen()) {
+        is_drawn = draw_dialog_background(get_full_dialog_scale(), 1, draw);
+    }
     if (!is_drawn) {
         draw();
     }

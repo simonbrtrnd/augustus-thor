@@ -317,12 +317,11 @@ static void draw_workshop(
     } else {
         window_building_draw_description_at(c, 96 + resources_y_offset, group_id, text_offset + 6);
     }
-    inner_panel_draw(c->x_offset + 16, c->y_offset + 146 + resources_y_offset, c->width_blocks - 2, 4);
-    window_building_draw_employment(c, 150 + resources_y_offset);
-    window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76,
-        c->y_offset + 154 + resources_y_offset);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 126 + resources_y_offset,
-        group_id, text_offset + 1);
+    int employment_y = 146 + resources_y_offset;
+    inner_panel_draw(c->x_offset + 16, c->y_offset + employment_y, c->width_blocks - 2, 4);
+    window_building_draw_employment(c, employment_y + 4);
+    window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + employment_y + 8);
+    window_building_draw_description_at(c, employment_y + 5 * BLOCK_SIZE, group_id, text_offset + 1);
 }
 
 void window_building_draw_wine_workshop(building_info_context *c)

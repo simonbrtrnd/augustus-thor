@@ -93,4 +93,47 @@ void second_screen_reset_content(void);
 
 int second_screen_has_content(void);
 
+/**
+ * Moves the controller cursor. While the current window shows its dialog on the second screen and the
+ * controller is in use, the cursor works on the dialog, and returns where it was on the main screen once
+ * the dialog closes. It shows once moved, and hides on a touch or a jump. Returns 1 when the second screen
+ * took the move.
+ */
+int second_screen_cursor_move(int delta_x, int delta_y);
+
+/**
+ * Presses or releases a mouse button where the controller cursor is on the second screen.
+ * Returns 0 when the cursor is not there.
+ */
+int second_screen_cursor_click(int is_right_button, int is_down);
+
+/**
+ * Moves the controller cursor and the focus border to the dialog's next button in the given direction.
+ * Returns 0 when the cursor is not on the second screen or no button lies that way.
+ */
+int second_screen_cursor_jump(int direction_x, int direction_y);
+
+/**
+ * Scrolls the dialog under the controller cursor on the second screen, up for -1 and down for 1.
+ */
+void second_screen_cursor_scroll(int direction_y);
+
+int second_screen_cursor_is_shown(void);
+
+/**
+ * Draws the controller cursor and its focus border over the second screen, after keeping a copy without them.
+ * When the window was redrawn and its focused button is gone, the focus moves to the dialog's first button.
+ */
+void second_screen_draw_cursor(int is_window_redrawn);
+
+/**
+ * Puts back the second screen as it was before the cursor was drawn on it.
+ */
+void second_screen_erase_cursor(void);
+
+/**
+ * Notes a button checked by the current window, while the second screen lists the buttons of its dialog.
+ */
+void second_screen_list_button(const mouse *m, int x, int y, int width, int height);
+
 #endif // GRAPHICS_SECOND_SCREEN_H

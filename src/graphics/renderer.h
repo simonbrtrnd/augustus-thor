@@ -98,6 +98,10 @@ typedef struct {
 
     int (*begin_second_screen_drawing)(int width, int height, float pixel_scale);
     void (*end_second_screen_drawing)(void);
+    void (*draw_mouse_cursor)(int x, int y);
+    void (*draw_frame_in_screen_pixels)(int x, int y, int width, int height, int thickness, color_t color);
+    int (*save_second_screen)(void);
+    void (*restore_second_screen)(void);
     int (*read_second_screen_pixels)(uint32_t *rgba_pixels, int width, int height);
 } graphics_renderer_interface;
 

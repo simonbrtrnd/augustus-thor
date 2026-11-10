@@ -138,6 +138,19 @@ static mouse get_go_back_mouse(void)
     return (mouse) { .x = -1, .y = -1, .right = m->right, .is_touch = m->is_touch };
 }
 
+static int jump_cursor_in_second_screen_dialog(const hotkeys *h)
+{
+    if (!second_screen_cursor_is_shown()) {
+        return 0;
+    }
+    scroll_state scrolled = mouse_get()->scrolled;
+    int direction_y = scrolled == SCROLL_DOWN ? 1 : scrolled == SCROLL_UP ? -1 : 0;
+    if (!direction_y && !h->cycle_overlay) {
+        return 0;
+    }
+    return second_screen_cursor_jump(h->cycle_overlay, direction_y) || !direction_y;
+}
+
 static void pass_scroll_to_second_screen_dialog(void)
 {
     const mouse *m = mouse_get();
@@ -157,9 +170,11 @@ static void update_input_after(void)
 
 void window_draw(int force)
 {
+    second_screen_erase_cursor();
     update_input_before();
     window_type *w = data.current_window;
-    if (force || data.refresh_on_draw) {
+    int is_redrawn = force || data.refresh_on_draw;
+    if (is_redrawn) {
         data.refresh_on_draw = 0;
         data.refresh_immediate = 0;
         graphics_clear_screen();
@@ -172,12 +187,15 @@ void window_draw(int force)
     if (second_screen_has_dialog()) {
         mouse go_back = get_go_back_mouse();
         w->handle_input(&go_back, h);
-        pass_scroll_to_second_screen_dialog();
+        if (!jump_cursor_in_second_screen_dialog(h)) {
+            pass_scroll_to_second_screen_dialog();
+        }
     } else {
         const mouse *m = mouse_get();
         w->handle_input(m, h);
         tooltip_handle(m, w->get_tooltip);
     }
+    second_screen_draw_cursor(is_redrawn);
     warning_draw();
     update_input_after();
 }

@@ -75,7 +75,9 @@ static struct {
     SDL_Renderer *renderer;
     SDL_Texture *render_texture;
     SDL_Texture *second_screen_texture;
+    SDL_Texture *second_screen_copy;
     int is_drawing_second_screen;
+    float second_screen_pixel_scale;
     int is_software_renderer;
     int paused;
     struct {
@@ -162,6 +164,7 @@ static int begin_second_screen_drawing(int width, int height, float pixel_scale)
     }
     SDL_RenderSetScale(data.renderer, pixel_scale, pixel_scale);
     data.is_drawing_second_screen = 1;
+    data.second_screen_pixel_scale = pixel_scale;
     return 1;
 }
 
@@ -169,6 +172,84 @@ static void end_second_screen_drawing(void)
 {
     data.is_drawing_second_screen = 0;
     SDL_SetRenderTarget(data.renderer, data.render_texture);
+}
+
+static void copy_whole_texture(SDL_Texture *from, SDL_Texture *to)
+{
+    SDL_Texture *former_target = SDL_GetRenderTarget(data.renderer);
+    SDL_SetRenderTarget(data.renderer, to);
+    SDL_SetTextureBlendMode(from, SDL_BLENDMODE_NONE);
+    SDL_RenderCopy(data.renderer, from, NULL, NULL);
+    SDL_RenderFlush(data.renderer);
+    SDL_SetRenderTarget(data.renderer, former_target);
+}
+
+static int save_second_screen(void)
+{
+    if (data.paused || !data.second_screen_texture) {
+        return 0;
+    }
+    int width, height;
+    SDL_QueryTexture(data.second_screen_texture, 0, 0, &width, &height);
+    if (data.second_screen_copy && !has_texture_size(data.second_screen_copy, width, height)) {
+        SDL_DestroyTexture(data.second_screen_copy);
+        data.second_screen_copy = 0;
+    }
+    if (!data.second_screen_copy) {
+        data.second_screen_copy = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ABGR8888,
+            SDL_TEXTUREACCESS_TARGET, width, height);
+        if (!data.second_screen_copy) {
+            return 0;
+        }
+    }
+    copy_whole_texture(data.second_screen_texture, data.second_screen_copy);
+    return 1;
+}
+
+static void restore_second_screen(void)
+{
+    if (data.paused || !data.second_screen_texture || !data.second_screen_copy) {
+        return;
+    }
+    copy_whole_texture(data.second_screen_copy, data.second_screen_texture);
+}
+
+static void draw_frame_in_screen_pixels(int x, int y, int width, int height, int thickness, color_t color)
+{
+    float scale = data.is_drawing_second_screen ? data.second_screen_pixel_scale : 1.0f;
+    int left = (int) (x * scale + 0.5f);
+    int top = (int) (y * scale + 0.5f);
+    int right = (int) ((x + width) * scale + 0.5f);
+    int bottom = (int) ((y + height) * scale + 0.5f);
+    SDL_Rect sides[4] = {
+        { left - thickness, top - thickness, right - left + 2 * thickness, thickness },
+        { left - thickness, bottom, right - left + 2 * thickness, thickness },
+        { left - thickness, top, thickness, bottom - top },
+        { right, top, thickness, bottom - top }
+    };
+    SDL_RenderSetScale(data.renderer, 1.0f, 1.0f);
+    SDL_SetRenderDrawColor(data.renderer,
+        (color & COLOR_CHANNEL_RED) >> COLOR_BITSHIFT_RED,
+        (color & COLOR_CHANNEL_GREEN) >> COLOR_BITSHIFT_GREEN,
+        (color & COLOR_CHANNEL_BLUE) >> COLOR_BITSHIFT_BLUE,
+        (color & COLOR_CHANNEL_ALPHA) >> COLOR_BITSHIFT_ALPHA);
+    SDL_RenderFillRects(data.renderer, sides, 4);
+    SDL_RenderSetScale(data.renderer, scale, scale);
+}
+
+static void draw_mouse_cursor(int x, int y)
+{
+    SDL_Texture *texture = data.cursors[CURSOR_ARROW].texture;
+    if (!texture) {
+        return;
+    }
+    SDL_Rect dst = {
+        x - data.cursors[CURSOR_ARROW].hotspot.x,
+        y - data.cursors[CURSOR_ARROW].hotspot.y,
+        data.cursors[CURSOR_ARROW].size,
+        data.cursors[CURSOR_ARROW].size
+    };
+    SDL_RenderCopy(data.renderer, texture, NULL, &dst);
 }
 
 static int read_second_screen_pixels(uint32_t *rgba_pixels, int width, int height)
@@ -1262,6 +1343,10 @@ static void create_renderer_interface(void)
     data.renderer_interface.update_scale = update_scale;
     data.renderer_interface.begin_second_screen_drawing = begin_second_screen_drawing;
     data.renderer_interface.end_second_screen_drawing = end_second_screen_drawing;
+    data.renderer_interface.draw_mouse_cursor = draw_mouse_cursor;
+    data.renderer_interface.draw_frame_in_screen_pixels = draw_frame_in_screen_pixels;
+    data.renderer_interface.save_second_screen = save_second_screen;
+    data.renderer_interface.restore_second_screen = restore_second_screen;
     data.renderer_interface.read_second_screen_pixels = read_second_screen_pixels;
 
     graphics_renderer_set_interface(&data.renderer_interface);

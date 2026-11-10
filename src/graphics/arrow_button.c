@@ -1,6 +1,7 @@
 #include "arrow_button.h"
 
 #include "graphics/image.h"
+#include "graphics/second_screen.h"
 
 static const int REPEATS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
@@ -54,6 +55,10 @@ int arrow_buttons_handle_mouse(
         } else {
             btn->repeats = 0;
         }
+    }
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        second_screen_list_button(m, x + buttons[i].x_offset, y + buttons[i].y_offset, buttons[i].size,
+            buttons[i].size);
     }
     int button_id = get_button(m, x, y, buttons, num_buttons);
     if (focus_button_id) {

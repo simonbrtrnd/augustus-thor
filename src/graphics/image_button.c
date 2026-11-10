@@ -6,6 +6,7 @@
 #include "core/image.h"
 #include "graphics/image.h"
 #include "graphics/renderer.h"
+#include "graphics/second_screen.h"
 #include "sound/effect.h"
 
 #define PRESSED_EFFECT_MILLIS 100
@@ -112,6 +113,10 @@ int image_buttons_handle_mouse(
         image_button *btn = &buttons[i];
         if (btn->focused) {
             btn->focused--;
+        }
+        if (btn->enabled) {
+            second_screen_list_button(m, x + btn->x_offset, y + btn->y_offset, image_button_width(btn),
+                image_button_height(btn));
         }
         if (x + btn->x_offset <= m->x &&
             x + btn->x_offset + image_button_width(btn) > m->x &&

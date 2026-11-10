@@ -1,5 +1,7 @@
 #include "generic_button.h"
 
+#include "graphics/second_screen.h"
+
 static unsigned int get_button(const mouse *m, int x, int y, generic_button *buttons, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
@@ -16,6 +18,9 @@ static unsigned int get_button(const mouse *m, int x, int y, generic_button *but
 int generic_buttons_handle_mouse(const mouse *m, int x, int y, generic_button *buttons, unsigned int num_buttons,
     unsigned int *focus_button_id)
 {
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        second_screen_list_button(m, x + buttons[i].x, y + buttons[i].y, buttons[i].width, buttons[i].height);
+    }
     unsigned int button_id = get_button(m, x, y, buttons, num_buttons);
     if (focus_button_id) {
         *focus_button_id = button_id;

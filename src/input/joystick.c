@@ -4,6 +4,7 @@
 #include "core/speed.h"
 #include "core/time.h"
 #include "game/system.h"
+#include "graphics/second_screen.h"
 #include "graphics/window.h"
 #include "input/hotkey.h"
 #include "input/keyboard.h"
@@ -31,6 +32,10 @@
 
 #define CURSOR_BOOST_TILT 0.9
 #define DPAD_WINDOW_SCROLL_VALUE (AXIS_MAX_VALUE / 3)
+#define STICK_JUMP_PUSH (AXIS_MAX_VALUE / 2)
+#define STICK_JUMP_RELEASE (AXIS_MAX_VALUE * 3 / 10)
+#define STICK_JUMP_FIRST_REPEAT_MILLIS 400
+#define STICK_JUMP_REPEAT_MILLIS 180
 #define CURSOR_BOOST_START_SPEED 0.5
 
 typedef int joystick_axis;
@@ -102,10 +107,17 @@ static struct {
         int left_button;
         int middle_button;
         int right_button;
+        int is_left_button_on_second_screen;
+        int is_right_button_on_second_screen;
         scroll_state scroll;
         time_millis last_scroll_time;
     } mouse;
     mapped_input map_scroll[NUM_DIRECTIONS];
+    struct {
+        int direction_x;
+        int direction_y;
+        time_millis next_jump;
+    } stick_jump;
     mapped_input joystick_hotkey[MAX_HOTKEYS];
     mapped_input virtual_keyboard;
     mapped_input touch_mode;
@@ -569,8 +581,29 @@ static int translate_mouse_cursor_position(void)
         return 1;
     }
 
-    system_move_mouse_cursor(delta_x, delta_y);
+    if (!second_screen_cursor_move(delta_x, delta_y)) {
+        system_move_mouse_cursor(delta_x, delta_y);
+    }
     return 1;
+}
+
+static void press_mouse_button(int is_right_button, int is_down, int *is_on_second_screen)
+{
+    if (is_down) {
+        *is_on_second_screen = second_screen_cursor_click(is_right_button, 1);
+    } else if (*is_on_second_screen) {
+        second_screen_cursor_click(is_right_button, 0);
+        *is_on_second_screen = 0;
+        return;
+    }
+    if (*is_on_second_screen) {
+        return;
+    }
+    if (is_right_button) {
+        mouse_set_right_down(is_down);
+    } else {
+        mouse_set_left_down(is_down);
+    }
 }
 
 static int translate_mouse_button_presses(void)
@@ -579,13 +612,13 @@ static int translate_mouse_button_presses(void)
     int button = get_joystick_input_for_action(MAPPING_ACTION_LEFT_MOUSE_BUTTON, 0);
     if (button != data.mouse.left_button) {
         data.mouse.left_button = button;
-        mouse_set_left_down(button);
+        press_mouse_button(0, button, &data.mouse.is_left_button_on_second_screen);
         handled = 1;
     }
     button = get_joystick_input_for_action(MAPPING_ACTION_RIGHT_MOUSE_BUTTON, 0);
     if (button != data.mouse.right_button) {
         data.mouse.right_button = button;
-        mouse_set_right_down(button);
+        press_mouse_button(1, button, &data.mouse.is_right_button_on_second_screen);
         handled = 1;
     }
     return handled;
@@ -629,6 +662,10 @@ static int translate_window_scrolling(void)
     // All mouse scrolling input will internally be treated as a joystick axis
     translate_input_for_element(&scroll_up, JOYSTICK_ELEMENT_AXIS);
     translate_input_for_element(&scroll_down, JOYSTICK_ELEMENT_AXIS);
+    if (second_screen_cursor_is_shown()) {
+        scroll_up.value = 0;
+        scroll_down.value = 0;
+    }
     if (!scroll_up.value && dpad_up) {
         scroll_up.value = DPAD_WINDOW_SCROLL_VALUE;
     }
@@ -657,6 +694,53 @@ static int translate_window_scrolling(void)
         data.mouse.last_scroll_time = 0;
         return 0;
     }
+}
+
+static int get_stick_axis(mapping_action negative, mapping_action positive)
+{
+    mapped_input negative_input, positive_input;
+    get_joystick_input_for_action(negative, &negative_input);
+    get_joystick_input_for_action(positive, &positive_input);
+    translate_input_for_element(&negative_input, JOYSTICK_ELEMENT_AXIS);
+    translate_input_for_element(&positive_input, JOYSTICK_ELEMENT_AXIS);
+    return positive_input.value - negative_input.value;
+}
+
+static void jump_second_screen_cursor(int direction_x, int direction_y)
+{
+    if (!second_screen_cursor_jump(direction_x, direction_y)) {
+        second_screen_cursor_scroll(direction_y);
+    }
+}
+
+static int translate_second_screen_stick_jumps(void)
+{
+    if (!second_screen_cursor_is_shown()) {
+        return 0;
+    }
+    int x = get_stick_axis(MAPPING_ACTION_SCROLL_MAP_LEFT, MAPPING_ACTION_SCROLL_MAP_RIGHT);
+    int y = get_stick_axis(MAPPING_ACTION_SCROLL_MAP_UP, MAPPING_ACTION_SCROLL_MAP_DOWN);
+    int is_horizontal = abs(x) > abs(y);
+    int push = is_horizontal ? abs(x) : abs(y);
+    int was_pushed = data.stick_jump.direction_x || data.stick_jump.direction_y;
+    if (push < (was_pushed ? STICK_JUMP_RELEASE : STICK_JUMP_PUSH)) {
+        data.stick_jump.direction_x = 0;
+        data.stick_jump.direction_y = 0;
+        return 0;
+    }
+    int direction_x = is_horizontal ? (x > 0 ? 1 : -1) : 0;
+    int direction_y = is_horizontal ? 0 : (y > 0 ? 1 : -1);
+    time_millis now = time_get_millis();
+    if (direction_x != data.stick_jump.direction_x || direction_y != data.stick_jump.direction_y) {
+        data.stick_jump.direction_x = direction_x;
+        data.stick_jump.direction_y = direction_y;
+        data.stick_jump.next_jump = now + STICK_JUMP_FIRST_REPEAT_MILLIS;
+        jump_second_screen_cursor(direction_x, direction_y);
+    } else if (now >= data.stick_jump.next_jump) {
+        data.stick_jump.next_jump = now + STICK_JUMP_REPEAT_MILLIS;
+        jump_second_screen_cursor(direction_x, direction_y);
+    }
+    return 1;
 }
 
 static int translate_map_scrolling(void)
@@ -776,6 +860,7 @@ int joystick_to_mouse_and_keyboard(void)
     if (!translate_mapping_reset()) {
         handled |= translate_mouse();
         handled |= translate_window_scrolling();
+        handled |= translate_second_screen_stick_jumps();
         handled |= translate_map_scrolling();
         handled |= translate_hotkeys();
         handled |= translate_system_functions();

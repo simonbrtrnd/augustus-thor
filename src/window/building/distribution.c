@@ -545,7 +545,7 @@ void window_building_draw_dock(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, 101, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, 101, 1);
     init_dock_permission_buttons();
     text_draw_centered(translation_for(TR_BUILDING_DOCK_CITIES_CONFIG_DESC), c->x_offset, c->y_offset + 215,
         BLOCK_SIZE * c->width_blocks, FONT_NORMAL_BLACK, 0);
@@ -707,7 +707,7 @@ void window_building_draw_market(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136 + y_offset, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140 + y_offset);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144 + y_offset);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 106, 97, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 106, 97, 1);
 }
 
 void window_building_distributor_draw_foreground(building_info_context *c)

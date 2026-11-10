@@ -37,7 +37,7 @@ static void draw_vacant_lot(building_info_context *c)
     if (map_closest_road_within_radius(b->x, b->y, 1, 2, 0, 0)) {
         text_id = 1;
     }
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 113, 128, text_id);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 113, 128, text_id);
 }
 
 static void draw_population_info(building_info_context *c, int y_offset)

@@ -45,6 +45,7 @@ typedef struct {
     int y_offset;
     int width_blocks;
     int height_blocks;
+    int content_height_blocks;
     int help_id;
     int can_play_sound;
     int building_id;

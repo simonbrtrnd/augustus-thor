@@ -901,11 +901,13 @@ static void draw_info_dialog_background(void)
     if (second_screen_is_drawing()) {
         context.width_blocks = screen_width() / BLOCK_SIZE;
         context.height_blocks = screen_height() / BLOCK_SIZE;
+        context.content_height_blocks = calc_bound(main_screen_frame.height_blocks, 0, context.height_blocks);
         context.x_offset = (screen_width() - BLOCK_SIZE * context.width_blocks) / 2;
         context.y_offset = (screen_height() - BLOCK_SIZE * context.height_blocks) / 2;
     } else {
         context.width_blocks = main_screen_frame.width_blocks;
         context.height_blocks = main_screen_frame.height_blocks;
+        context.content_height_blocks = context.height_blocks;
         context.x_offset = main_screen_frame.x;
         context.y_offset = main_screen_frame.y;
     }

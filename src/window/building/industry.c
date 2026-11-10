@@ -93,7 +93,7 @@ static void draw_farm(building_info_context *c, int help_id, const char *sound_f
     inner_panel_draw(c->x_offset + 16, c->y_offset + 162, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 166);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 170);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, group_id, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, group_id, 1);
 }
 
 void window_building_draw_wheat_farm(building_info_context *c)
@@ -181,7 +181,7 @@ static void draw_raw_material(
     inner_panel_draw(c->x_offset + 16, c->y_offset + 162, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 166);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 170);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, group_id, text_offset + 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, group_id, text_offset + 1);
 }
 
 void window_building_draw_marble_quarry(building_info_context *c)
@@ -430,16 +430,16 @@ void window_building_draw_city_mint(building_info_context *c)
         window_building_draw_employment(c, 182);
         window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 186);
         lang_text_draw(CUSTOM_TRANSLATION, TR_BUILDING_CITY_MINT_CONVERT,
-            c->x_offset + 32, c->y_offset + BLOCK_SIZE * c->height_blocks - 190, FONT_NORMAL_BLACK);
+            c->x_offset + 32, c->y_offset + BLOCK_SIZE * c->content_height_blocks - 190, FONT_NORMAL_BLACK);
         lang_text_draw(CUSTOM_TRANSLATION, TR_BUILDING_CITY_MINT_GOLD_TO_DN,
-            c->x_offset + 60, c->y_offset + BLOCK_SIZE * c->height_blocks - 166, FONT_NORMAL_BLACK);
+            c->x_offset + 60, c->y_offset + BLOCK_SIZE * c->content_height_blocks - 166, FONT_NORMAL_BLACK);
         lang_text_draw(CUSTOM_TRANSLATION, TR_BUILDING_CITY_MINT_DN_TO_GOLD,
-            c->x_offset + 60, c->y_offset + BLOCK_SIZE * c->height_blocks - 142, FONT_NORMAL_BLACK);
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 118, CUSTOM_TRANSLATION,
+            c->x_offset + 60, c->y_offset + BLOCK_SIZE * c->content_height_blocks - 142, FONT_NORMAL_BLACK);
+        window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 118, CUSTOM_TRANSLATION,
             b->output_resource_id == RESOURCE_DENARII ?
                 TR_BUILDING_CITY_MINT_DESC : TR_BUILDING_CITY_MINT_DESC_ALTERNATIVE);
         if (governor_palace_is_allowed() && b->output_resource_id == RESOURCE_DENARII) {
-            window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 78,
+            window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 78,
                 CUSTOM_TRANSLATION, TR_BUILDING_CITY_MINT_DESC_NO_PALACE + city_buildings_has_governor_house());
         }
         data.city_mint_id = b->id;
@@ -458,7 +458,7 @@ void window_building_draw_city_mint_foreground(building_info_context *c)
         return;
     }
     int x = c->x_offset + 32;
-    int y = c->y_offset + BLOCK_SIZE * c->height_blocks - 171;
+    int y = c->y_offset + BLOCK_SIZE * c->content_height_blocks - 171;
     button_border_draw(x, y, 20, 20, data.focus_button_id == 1);
     button_border_draw(x, y + 24, 20, 20, data.focus_button_id == 2);
     int selected_offset = building_get(data.city_mint_id)->output_resource_id == RESOURCE_DENARII ? 0 : 24;
@@ -503,7 +503,7 @@ void window_building_draw_shipyard(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, 100, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, 100, 1);
 }
 
 void window_building_draw_wharf(building_info_context *c)
@@ -547,7 +547,7 @@ void window_building_draw_wharf(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, 102, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, 102, 1);
 }
 
 static void city_mint_conversion_changed(int accepted, int checked)
@@ -581,7 +581,7 @@ int window_building_handle_mouse_city_mint(const mouse *m, building_info_context
     if (!data.city_mint_id) {
         return 0;
     }
-    if (generic_buttons_handle_mouse(m, c->x_offset + 16, c->y_offset + BLOCK_SIZE * c->height_blocks - 171,
+    if (generic_buttons_handle_mouse(m, c->x_offset + 16, c->y_offset + BLOCK_SIZE * c->content_height_blocks - 171,
         mint_conversion_buttons, 2, &data.focus_button_id)) {
         window_request_refresh();
         return 1;

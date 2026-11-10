@@ -140,7 +140,7 @@ static void draw_culture_info(building_info_context *c, int help_id, const char 
     inner_panel_draw(c->x_offset + 16, c->y_offset + 116, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 120);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 124);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 126, group_id, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 126, group_id, 1);
 }
 
 void window_building_draw_clinic(building_info_context *c)
@@ -174,7 +174,7 @@ void window_building_draw_bathhouse(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 116, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 120);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 124);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 126, 83, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 126, 83, 1);
 }
 
 void window_building_draw_barber(building_info_context *c)
@@ -202,7 +202,7 @@ void window_building_draw_school(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 136, 85, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 136, 85, 1);
 }
 
 void window_building_draw_academy(building_info_context *c)
@@ -226,7 +226,7 @@ void window_building_draw_academy(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 136, 86, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 136, 86, 1);
 }
 
 void window_building_draw_library(building_info_context *c)
@@ -249,7 +249,7 @@ void window_building_draw_library(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 140);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 136, 87, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 136, 87, 1);
 }
 
 static void draw_temple_info(building_info_context *c, int image_offset)
@@ -412,7 +412,7 @@ void window_building_draw_theater(building_info_context *c)
     } else {
         lang_text_draw(72, 5, c->x_offset + 32, c->y_offset + 182, FONT_NORMAL_BROWN);
     }
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 100, 72, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 100, 72, 1);
 }
 
 void window_building_draw_amphitheater(building_info_context *c)
@@ -465,7 +465,7 @@ void window_building_draw_amphitheater(building_info_context *c)
     } else {
         lang_text_draw(71, 9, c->x_offset + 32, c->y_offset + 234, FONT_NORMAL_BROWN);
     }
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 90, 71, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 90, 71, 1);
 }
 
 static void draw_entertainment_school(building_info_context *c, const char *sound_file, int group_id)
@@ -494,7 +494,7 @@ static void draw_entertainment_school(building_info_context *c, const char *soun
     inner_panel_draw(c->x_offset + 16, c->y_offset + 116, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 120);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 124);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 92, group_id, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 92, group_id, 1);
 }
 
 void window_building_draw_actor_colony(building_info_context *c)
@@ -612,7 +612,7 @@ static void draw_temple(building_info_context *c, const char *sound_file, int gr
         inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
         window_building_draw_employment(c, 150);
         window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, group_id, 1);
+        window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, group_id, 1);
     } else {
         outer_panel_draw(c->x_offset, c->y_offset, c->width_blocks, c->height_blocks);
         lang_text_draw_centered(group_id, 0, c->x_offset, c->y_offset + 12, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK);
@@ -629,7 +629,7 @@ void window_building_draw_oracle(building_info_context *c)
         window_building_play_sound(c, "wavs/oracle.wav");
         outer_panel_draw(c->x_offset, c->y_offset, c->width_blocks, c->height_blocks);
         lang_text_draw_centered(110, 0, c->x_offset, c->y_offset + 12, 16 * c->width_blocks, FONT_LARGE_BLACK);
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 148, 110, 1);
+        window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 148, 110, 1);
         inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
         window_building_draw_employment(c, 150);
         window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
@@ -665,7 +665,7 @@ void window_building_draw_shrine_ceres(building_info_context *c)
         c->x_offset, c->y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, 92, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, 92, 1);
     image_draw(21 + image_group(GROUP_PANEL_WINDOWS),
         c->x_offset + 180, c->y_offset + 45, COLOR_MASK_NONE, SCALE_NONE);
 }
@@ -680,7 +680,7 @@ void window_building_draw_shrine_neptune(building_info_context *c)
         c->x_offset, c->y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, 93, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, 93, 1);
     image_draw(22 + image_group(GROUP_PANEL_WINDOWS),
         c->x_offset + 180, c->y_offset + 45, COLOR_MASK_NONE, SCALE_NONE);
 }
@@ -695,7 +695,7 @@ void window_building_draw_shrine_mercury(building_info_context *c)
         c->x_offset, c->y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, 94, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, 94, 1);
     image_draw(23 + image_group(GROUP_PANEL_WINDOWS),
         c->x_offset + 180, c->y_offset + 45, COLOR_MASK_NONE, SCALE_NONE);
 }
@@ -710,7 +710,7 @@ void window_building_draw_shrine_mars(building_info_context *c)
         c->x_offset, c->y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, 95, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, 95, 1);
     image_draw(24 + image_group(GROUP_PANEL_WINDOWS),
         c->x_offset + 180, c->y_offset + 45, COLOR_MASK_NONE, SCALE_NONE);
 }
@@ -725,7 +725,7 @@ void window_building_draw_shrine_venus(building_info_context *c)
         c->x_offset, c->y_offset + 10, BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK, 0);
     inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 116, 96, 1);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 116, 96, 1);
     image_draw(25 + image_group(GROUP_PANEL_WINDOWS),
         c->x_offset + 180, c->y_offset + 45, COLOR_MASK_NONE, SCALE_NONE);
 }
@@ -961,7 +961,7 @@ void window_building_draw_tavern(building_info_context *c)
     inner_panel_draw(c->x_offset + 16, c->y_offset + 188, c->width_blocks - 2, 4);
     window_building_draw_employment(c, 192);
     window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 196);
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 110, CUSTOM_TRANSLATION,
+    window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 110, CUSTOM_TRANSLATION,
         TR_BUILDING_TAVERN_DESC_5);
     return;
 }
@@ -1134,7 +1134,7 @@ void window_building_draw_arena(building_info_context *c)
         window_building_draw_description(c, CUSTOM_TRANSLATION, TR_WINDOW_BUILDING_ARENA_NEEDS_LIONS);
     }
     if (b->type == BUILDING_ARENA) {
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 80, 74, 1);
+        window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 80, 74, 1);
     }
 }
 
@@ -1220,7 +1220,7 @@ void window_building_draw_hippodrome_background(building_info_context *c)
                 city_data.games.chosen_horse - 1), c->x_offset + 125, c->y_offset + y_offset + 240, 320,
                 0, FONT_NORMAL_BLACK, 0);
         } else {
-            window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 160, 73, 1);
+            window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 160, 73, 1);
         }
         text_draw_centered(translation_for(city_data.games.chosen_horse ? TR_WINDOW_IN_PROGRESS_BET_BUTTON :
             TR_WINDOW_RACE_BET_TITLE), c->x_offset + 88, c->y_offset + y_offset + 351, 300, FONT_NORMAL_BLACK, 0);
@@ -1254,7 +1254,7 @@ void window_building_draw_nymphaeum(building_info_context *c)
         inner_panel_draw(c->x_offset + 16, c->y_offset + 146, c->width_blocks - 2, 4);
         window_building_draw_employment(c, 150);
         window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 154);
-        window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 148, 110, 1);
+        window_building_draw_description_at(c, BLOCK_SIZE * c->content_height_blocks - 148, 110, 1);
     } else {
         outer_panel_draw(c->x_offset, c->y_offset, c->width_blocks, c->height_blocks);
         text_draw_centered(translation_for(TR_BUILDING_NYMPHAEUM),

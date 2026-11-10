@@ -59,7 +59,7 @@ static struct {
     button_area focus;
     time_millis last_jump;
     int is_drawn;
-    int is_clicking;
+    int is_sending_input;
 } cursor;
 
 static struct {
@@ -265,7 +265,7 @@ void second_screen_handle_input(const mouse *m)
     if (!data.has_content || data.content_window != window_get_id()) {
         return;
     }
-    if (m->left.went_down && !cursor.is_clicking) {
+    if (m->left.went_down && !cursor.is_sending_input) {
         cursor.is_visible = 0;
         cursor.has_focus = 0;
     }
@@ -284,9 +284,44 @@ int second_screen_has_content(void)
     return data.has_content;
 }
 
-int second_screen_cursor_is_shown(void)
+int second_screen_cursor_is_active(void)
 {
     return cursor.is_active;
+}
+
+static int center_x(const button_area *area)
+{
+    return area->x + area->width / 2;
+}
+
+static int center_y(const button_area *area)
+{
+    return area->y + area->height / 2;
+}
+
+static mouse get_cursor_mouse(void)
+{
+    mouse m = { 0 };
+    m.x = cursor.x;
+    m.y = cursor.y;
+    m.is_inside_window = 1;
+    m.window_has_focus = 1;
+    return m;
+}
+
+static void send_cursor_input(const mouse *m)
+{
+    cursor.is_sending_input = 1;
+    second_screen_handle_input(m);
+    cursor.is_sending_input = 0;
+}
+
+static void focus_button(const button_area *button)
+{
+    cursor.focus = *button;
+    cursor.has_focus = 1;
+    cursor.x = center_x(button);
+    cursor.y = center_y(button);
 }
 
 static void activate_cursor(void)
@@ -345,27 +380,19 @@ int second_screen_cursor_click(int is_right_button, int is_down)
     if (!is_right_button && !cursor.is_visible && !cursor.has_focus) {
         return 1;
     }
-    mouse m = { 0 };
-    m.x = cursor.x;
-    m.y = cursor.y;
-    m.is_inside_window = 1;
-    m.window_has_focus = 1;
+    mouse m = get_cursor_mouse();
     mouse_button *button = is_right_button ? &m.right : &m.left;
     button->is_down = is_down;
     button->went_down = is_down;
     button->went_up = !is_down;
-    cursor.is_clicking = 1;
-    second_screen_handle_input(&m);
-    cursor.is_clicking = 0;
+    send_cursor_input(&m);
     return 1;
 }
 
 static int contains_center_of(const button_area *outer, const button_area *inner)
 {
-    int center_x = inner->x + inner->width / 2;
-    int center_y = inner->y + inner->height / 2;
-    return center_x >= outer->x && center_x < outer->x + outer->width &&
-        center_y >= outer->y && center_y < outer->y + outer->height;
+    return center_x(inner) >= outer->x && center_x(inner) < outer->x + outer->width &&
+        center_y(inner) >= outer->y && center_y(inner) < outer->y + outer->height;
 }
 
 void second_screen_list_button(const mouse *m, int x, int y, int width, int height)
@@ -388,15 +415,22 @@ void second_screen_list_button(const mouse *m, int x, int y, int width, int heig
 
 static void list_dialog_buttons(void)
 {
-    mouse probe = { 0 };
+    mouse probe = get_cursor_mouse();
     probe.x = BUTTON_LISTING_PROBE;
     probe.y = BUTTON_LISTING_PROBE;
-    probe.is_inside_window = 1;
-    probe.window_has_focus = 1;
     listed.count = 0;
     listed.is_listing = 1;
-    second_screen_handle_input(&probe);
+    send_cursor_input(&probe);
     listed.is_listing = 0;
+}
+
+int second_screen_get_focus_distance(int from_x, int from_y, int direction_x, int direction_y, int to_x, int to_y)
+{
+    int x = to_x - from_x;
+    int y = to_y - from_y;
+    int along = x * direction_x + y * direction_y;
+    int across = abs(x * direction_y - y * direction_x);
+    return along <= 0 || across > along ? -1 : along + 2 * across;
 }
 
 static const button_area *find_button_in_direction(int direction_x, int direction_y)
@@ -405,15 +439,9 @@ static const button_area *find_button_in_direction(int direction_x, int directio
     int best_distance = 0;
     for (int i = 0; i < listed.count; i++) {
         const button_area *button = &listed.buttons[i];
-        int x = button->x + button->width / 2 - cursor.x;
-        int y = button->y + button->height / 2 - cursor.y;
-        int along = x * direction_x + y * direction_y;
-        int across = abs(x * direction_y - y * direction_x);
-        if (along <= 0 || across > along) {
-            continue;
-        }
-        int distance = along + 2 * across;
-        if (!best || distance < best_distance) {
+        int distance = second_screen_get_focus_distance(cursor.x, cursor.y, direction_x, direction_y,
+            center_x(button), center_y(button));
+        if (distance >= 0 && (!best || distance < best_distance)) {
             best = button;
             best_distance = distance;
         }
@@ -436,11 +464,7 @@ int second_screen_cursor_jump(int direction_x, int direction_y)
     if (!button) {
         return 0;
     }
-    cursor.focus = *button;
-    cursor.has_focus = 1;
-    cursor.is_visible = 0;
-    cursor.x = button->x + button->width / 2;
-    cursor.y = button->y + button->height / 2;
+    focus_button(button);
     cursor.last_jump = time_get_millis();
     return 1;
 }
@@ -450,15 +474,9 @@ void second_screen_cursor_scroll(int direction_y)
     if (!cursor.is_active || !direction_y) {
         return;
     }
-    mouse m = { 0 };
-    m.x = cursor.x;
-    m.y = cursor.y;
-    m.is_inside_window = 1;
-    m.window_has_focus = 1;
+    mouse m = get_cursor_mouse();
     m.scrolled = direction_y > 0 ? SCROLL_DOWN : SCROLL_UP;
-    cursor.is_clicking = 1;
-    second_screen_handle_input(&m);
-    cursor.is_clicking = 0;
+    send_cursor_input(&m);
 }
 
 static int is_focus_listed(void)
@@ -478,17 +496,17 @@ static const button_area *find_first_button(void)
     const button_area *first = 0;
     for (int i = 0; i < listed.count; i++) {
         const button_area *button = &listed.buttons[i];
-        if (!first || button->y + button->height / 2 < first->y + first->height / 2) {
+        if (!first || center_y(button) < center_y(first)) {
             first = button;
         }
     }
     if (!first) {
         return 0;
     }
-    int top_row_y = first->y + first->height / 2;
+    int top_row_y = center_y(first);
     for (int i = 0; i < listed.count; i++) {
         const button_area *button = &listed.buttons[i];
-        if (button->y + button->height / 2 - top_row_y <= SAME_ROW_DISTANCE && button->x < first->x) {
+        if (center_y(button) - top_row_y <= SAME_ROW_DISTANCE && button->x < first->x) {
             first = button;
         }
     }
@@ -502,13 +520,11 @@ static void focus_first_button_after_page_change(void)
         return;
     }
     const button_area *button = find_first_button();
-    if (!button) {
+    if (button) {
+        focus_button(button);
+    } else {
         cursor.has_focus = 0;
-        return;
     }
-    cursor.focus = *button;
-    cursor.x = button->x + button->width / 2;
-    cursor.y = button->y + button->height / 2;
 }
 
 static void draw_cursor(void)

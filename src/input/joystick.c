@@ -31,12 +31,12 @@
 #define TRACKBALL_TO_AXIS_RATIO 5
 
 #define CURSOR_BOOST_TILT 0.9
+#define CURSOR_BOOST_START_SPEED 0.5
 #define DPAD_WINDOW_SCROLL_VALUE (AXIS_MAX_VALUE / 3)
 #define STICK_JUMP_PUSH (AXIS_MAX_VALUE / 2)
 #define STICK_JUMP_RELEASE (AXIS_MAX_VALUE * 3 / 10)
 #define STICK_JUMP_FIRST_REPEAT_MILLIS 400
 #define STICK_JUMP_REPEAT_MILLIS 180
-#define CURSOR_BOOST_START_SPEED 0.5
 
 typedef int joystick_axis;
 typedef int joystick_button;
@@ -589,17 +589,12 @@ static int translate_mouse_cursor_position(void)
 
 static void press_mouse_button(int is_right_button, int is_down, int *is_on_second_screen)
 {
-    if (is_down) {
-        *is_on_second_screen = second_screen_cursor_click(is_right_button, 1);
-    } else if (*is_on_second_screen) {
+    if (!is_down && *is_on_second_screen) {
         second_screen_cursor_click(is_right_button, 0);
         *is_on_second_screen = 0;
-        return;
-    }
-    if (*is_on_second_screen) {
-        return;
-    }
-    if (is_right_button) {
+    } else if (is_down && second_screen_cursor_click(is_right_button, 1)) {
+        *is_on_second_screen = 1;
+    } else if (is_right_button) {
         mouse_set_right_down(is_down);
     } else {
         mouse_set_left_down(is_down);
@@ -662,7 +657,7 @@ static int translate_window_scrolling(void)
     // All mouse scrolling input will internally be treated as a joystick axis
     translate_input_for_element(&scroll_up, JOYSTICK_ELEMENT_AXIS);
     translate_input_for_element(&scroll_down, JOYSTICK_ELEMENT_AXIS);
-    if (second_screen_cursor_is_shown()) {
+    if (second_screen_cursor_is_active()) {
         scroll_up.value = 0;
         scroll_down.value = 0;
     }
@@ -715,7 +710,7 @@ static void jump_second_screen_cursor(int direction_x, int direction_y)
 
 static int translate_second_screen_stick_jumps(void)
 {
-    if (!second_screen_cursor_is_shown()) {
+    if (!second_screen_cursor_is_active()) {
         return 0;
     }
     int x = get_stick_axis(MAPPING_ACTION_SCROLL_MAP_LEFT, MAPPING_ACTION_SCROLL_MAP_RIGHT);

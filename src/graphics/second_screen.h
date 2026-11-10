@@ -118,7 +118,16 @@ int second_screen_cursor_jump(int direction_x, int direction_y);
  */
 void second_screen_cursor_scroll(int direction_y);
 
-int second_screen_cursor_is_shown(void);
+/**
+ * Whether the controller works on the dialog of the second screen, shown or not.
+ */
+int second_screen_cursor_is_active(void);
+
+/**
+ * How far a point lies from another in a direction, for moving a focus between buttons.
+ * Returns -1 when the point is not within 45 degrees of that direction.
+ */
+int second_screen_get_focus_distance(int from_x, int from_y, int direction_x, int direction_y, int to_x, int to_y);
 
 /**
  * Draws the controller cursor and its focus border over the second screen, after keeping a copy without them.

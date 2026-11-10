@@ -140,7 +140,7 @@ static mouse get_go_back_mouse(void)
 
 static int jump_cursor_in_second_screen_dialog(const hotkeys *h)
 {
-    if (!second_screen_cursor_is_shown()) {
+    if (!second_screen_cursor_is_active()) {
         return 0;
     }
     scroll_state scrolled = mouse_get()->scrolled;

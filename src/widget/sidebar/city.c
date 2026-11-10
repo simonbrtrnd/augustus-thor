@@ -46,8 +46,6 @@
 #include "window/mission_briefing.h"
 #include "window/overlay_menu.h"
 
-#include <stdlib.h>
-
 #define MINIMAP_Y_OFFSET 59
 #define PANEL_LIST_MARGIN 6
 #define PANEL_LIST_ROW_HEIGHT 24
@@ -802,14 +800,9 @@ static int get_target_in_direction(const panel_target *targets, int count, int f
     int best = from;
     int best_distance = 0;
     for (int i = 0; i < count; i++) {
-        int x = targets[i].x + targets[i].width / 2 - from_x;
-        int y = targets[i].y + targets[i].height / 2 - from_y;
-        int along = x * dx + y * dy;
-        if (along <= 0) {
-            continue;
-        }
-        int distance = along + 2 * abs(x * dy - y * dx);
-        if (best == from || distance < best_distance) {
+        int distance = second_screen_get_focus_distance(from_x, from_y, dx, dy,
+            targets[i].x + targets[i].width / 2, targets[i].y + targets[i].height / 2);
+        if (distance >= 0 && (best == from || distance < best_distance)) {
             best = i;
             best_distance = distance;
         }

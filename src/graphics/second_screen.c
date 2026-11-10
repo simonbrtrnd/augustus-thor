@@ -172,6 +172,8 @@ static int is_opened_from_bottom_screen(void)
         case WINDOW_BUILD_MENU:
         case WINDOW_OVERLAY_MENU:
         case WINDOW_MILITARY_MENU:
+        case WINDOW_BUILDING_INFO:
+        case WINDOW_MESSAGE_LIST:
             return 1;
         default:
             return 0;

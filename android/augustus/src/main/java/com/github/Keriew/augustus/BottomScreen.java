@@ -93,6 +93,9 @@ class BottomScreen implements SurfaceHolder.Callback, View.OnTouchListener, View
      */
     @Override
     public boolean onKey(View view, int keyCode, KeyEvent event) {
+        if (AugustusMainActivity.sendBackAsEscape(event)) {
+            return true;
+        }
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
             case KeyEvent.KEYCODE_VOLUME_UP:
